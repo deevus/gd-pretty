@@ -1,0 +1,3 @@
+[submodule "lib/tree-sitter-gdscript"]
+	path = lib/tree-sitter-gdscript
+	url = https://github.com/PrestonKnopp/tree-sitter-gdscript
