@@ -1,1 +1,1 @@
-pub usingnamespace @import("ffi.zig");
+pub const TSParser = @import("TSParser.zig");
