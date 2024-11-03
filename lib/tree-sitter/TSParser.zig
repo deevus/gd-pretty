@@ -28,9 +28,7 @@ pub inline fn parseString(self: TSParser, input: []const u8) !TSTree {
     const tree = ffi.ts_parser_parse_string(self.ptr, null, input.ptr, @intCast(input.len));
 
     if (tree) |t| {
-        return .{
-            .ptr = t,
-        };
+        return TSTree.init(t, input);
     } else {
         return error.ParseFailed;
     }

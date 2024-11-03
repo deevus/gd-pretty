@@ -2,13 +2,16 @@ const std = @import("std");
 const ffi = @import("ffi.zig");
 
 const TSNode = @This();
+const TSTree = @import("TSTree.zig");
 const TSTreeCursor = @import("TSTreeCursor.zig");
 
 handle: ffi.TSNode,
+tree: *TSTree,
 
-pub inline fn init(handle: ffi.TSNode) TSNode {
+pub inline fn init(handle: ffi.TSNode, tree: *TSTree) TSNode {
     return .{
         .handle = handle,
+        .tree = tree,
     };
 }
 
@@ -26,6 +29,10 @@ pub inline fn startByte(self: TSNode) u32 {
 
 pub inline fn endByte(self: TSNode) u32 {
     return ffi.ts_node_end_byte(self.handle);
+}
+
+pub inline fn text(self: TSNode) []const u8 {
+    return self.tree.input[self.startByte()..self.endByte()];
 }
 
 pub inline fn startPoint(self: TSNode) ffi.TSPoint {

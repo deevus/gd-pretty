@@ -5,10 +5,12 @@ const TSTree = @import("TSTree.zig");
 const TSNode = @import("TSNode.zig");
 
 handle: ffi.TSTreeCursor,
+tree: *TSTree,
 
 pub inline fn init(node: TSNode) TSTreeCursor {
     return .{
         .handle = ffi.ts_tree_cursor_new(node.handle),
+        .tree = node.tree,
     };
 }
 
@@ -25,7 +27,9 @@ pub inline fn gotoParent(self: *TSTreeCursor) bool {
 }
 
 pub inline fn currentNode(self: TSTreeCursor) TSNode {
-    return TSNode.init(ffi.ts_tree_cursor_current_node(&self.handle));
+    const node = ffi.ts_tree_cursor_current_node(&self.handle);
+
+    return TSNode.init(node, self.tree);
 }
 
 pub inline fn currentFieldName(self: *TSTreeCursor) ?[*c]const u8 {

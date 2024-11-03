@@ -51,9 +51,9 @@ const GdNodeType = enum {
     inferred_type,
     @":=",
     @"var",
-    @"true",
-    @"false",
-    @"type",
+    true,
+    false,
+    type,
     @"if",
     @"else",
     @"(",
@@ -131,7 +131,7 @@ pub fn main() !void {
         const buf = try arena_allocator.alloc(u8, try file.getEndPos());
         _ = try file.readAll(buf);
 
-        const tree = try ts_parser.parseString(buf);
+        var tree = try ts_parser.parseString(buf);
         defer tree.deinit();
 
         const root_node = tree.rootNode();
@@ -154,7 +154,9 @@ fn depthFirstWalk(cursor: *ts.TSTreeCursor) !void {
     const node_type = current_node.getTypeAsEnum(GdNodeType) catch @panic("unknown node type");
 
     if (node_type) |nt| {
-        std.log.debug("{}", .{ nt });
+        if (current_node.isNamed()) {
+            std.log.debug("{}, {s}", .{ nt, current_node.text() });
+        }
     } else {
         try unknown_node_types.append(current_node.getTypeAsString());
     }
