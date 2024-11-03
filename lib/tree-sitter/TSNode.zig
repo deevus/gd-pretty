@@ -88,7 +88,7 @@ pub inline fn getTypeAsString(self: TSNode) [*c]const u8 {
     return ffi.ts_node_type(self.handle);
 }
 
-pub inline fn getTypeAsEnum(self: TSNode, comptime E: type) !?E {
+pub fn getTypeAsEnum(self: TSNode, comptime E: type) !?E {
     const node_type = self.getTypeAsString();
     var buf: [128]u8 = undefined;
 

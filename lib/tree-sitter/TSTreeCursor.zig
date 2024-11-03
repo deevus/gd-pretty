@@ -20,6 +20,10 @@ pub inline fn gotoNextSibling(self: *TSTreeCursor) bool {
     return ffi.ts_tree_cursor_goto_next_sibling(&self.handle);
 }
 
+pub inline fn gotoParent(self: *TSTreeCursor) bool {
+    return ffi.ts_tree_cursor_goto_parent(&self.handle);
+}
+
 pub inline fn currentNode(self: TSTreeCursor) TSNode {
     return TSNode.init(ffi.ts_tree_cursor_current_node(&self.handle));
 }

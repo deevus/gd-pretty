@@ -7,7 +7,85 @@ const TSParser = ts.TSParser;
 
 const GdNodeType = enum {
     source,
+    extends_statement,
+    const_statement,
+    signal_statement,
+    variable_statement,
+    function_definition,
+    identifier,
+    attribute,
+    array,
+    string,
+    binary_operator,
+    arguments,
+    attribute_call,
+    expression_statement,
+    call,
+    assignment,
+    body,
+    if_statement,
+    typed_parameter,
+    parameters,
+    name,
+    func,
+    conditional_expression,
+    pattern_section,
+    match,
+    match_body,
+    match_statement,
+    integer,
+    @"return",
+    return_statement,
+    else_clause,
+    elif,
+    elif_clause,
+    get,
+    get_body,
+    set,
+    set_body,
+    setget,
+    extends,
+    @"const",
+    signal,
+    comparison_operator,
+    inferred_type,
+    @":=",
+    @"var",
+    @"true",
+    @"false",
+    @"type",
+    @"if",
+    @"else",
+    @"(",
+    @")",
+    @"[",
+    @"]",
+    @"{",
+    @"}",
+    @",",
+    @".",
+    @":",
+    @";",
+    @"+",
+    @"-",
+    @"*",
+    @"/",
+    @"%",
+    @"<",
+    @">",
+    @"<=",
+    @">=",
+    @"==",
+    @"!=",
+    @"=",
+    @"&&",
+    @"||",
+    @"!",
+    @"\"",
+    @"->",
 };
+
+var unknown_node_types: std.ArrayList([*c]const u8) = undefined;
 
 pub fn main() !void {
     const ts_parser = TSParser.init();
@@ -45,6 +123,8 @@ pub fn main() !void {
 
     var arena_allocator = arena.allocator();
 
+    unknown_node_types = std.ArrayList([*c]const u8).init(arena_allocator);
+
     for (paths.items) |path| {
         const file = try std.fs.cwd().openFile(path, .{});
 
@@ -55,18 +135,36 @@ pub fn main() !void {
         defer tree.deinit();
 
         const root_node = tree.rootNode();
-        std.log.debug("node type: {s}", .{root_node.getTypeAsString()});
 
-        const child_count = root_node.namedChildCount();
-        if (child_count > 0) {
-            for (0..child_count) |i| {
-                const node = root_node.namedChild(@intCast(i)).?;
-                const value = buf[node.startByte()..node.endByte()];
-                const node_type = try node.getTypeAsEnum(GdNodeType);
+        var cursor = root_node.cursor();
+        try depthFirstWalk(&cursor);
+    }
 
-                std.log.debug("node type: {s}", .{node_type});
-                std.log.debug("node value: {s}", .{value});
-            }
+    if (unknown_node_types.items.len > 0) {
+        std.log.warn("unknown node types", .{});
+
+        for (unknown_node_types.items) |node_type| {
+            std.log.warn("{s}", .{node_type});
         }
+    }
+}
+
+fn depthFirstWalk(cursor: *ts.TSTreeCursor) !void {
+    const current_node = cursor.currentNode();
+    const node_type = current_node.getTypeAsEnum(GdNodeType) catch @panic("unknown node type");
+
+    if (node_type) |nt| {
+        std.log.debug("{}", .{ nt });
+    } else {
+        try unknown_node_types.append(current_node.getTypeAsString());
+    }
+
+    if (cursor.gotoFirstChild()) {
+        try depthFirstWalk(cursor);
+        _ = cursor.gotoParent();
+    }
+
+    while (cursor.gotoNextSibling()) {
+        try depthFirstWalk(cursor);
     }
 }
