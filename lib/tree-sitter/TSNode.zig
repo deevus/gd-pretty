@@ -43,32 +43,32 @@ pub inline fn endPoint(self: TSNode) ffi.TSPoint {
     return ffi.ts_node_end_point(self.handle);
 }
 
-fn nodeOrNull(node: ffi.TSNode) ?TSNode {
+fn nodeOrNull(self: TSNode, node: ffi.TSNode) ?TSNode {
     if (ffi.ts_node_is_null(node)) {
         return null;
     }
 
-    return TSNode.init(node);
+    return TSNode.init(node, self.tree);
 }
 
 pub inline fn nextSibling(self: TSNode) ?TSNode {
     const node = ffi.ts_node_next_sibling(self.handle);
 
-    return nodeOrNull(node);
+    return self.nodeOrNull(node);
 }
 
 pub inline fn prevSibling(self: TSNode) ?TSNode {
     const node = ffi.ts_node_prev_sibling(self.handle);
 
-    return nodeOrNull(node);
+    return self.nodeOrNull(node);
 }
 
 pub inline fn parent(self: TSNode) ?TSNode {
-    return nodeOrNull(ffi.ts_node_parent(self.handle));
+    return self.nodeOrNull(ffi.ts_node_parent(self.handle));
 }
 
 pub inline fn child(self: TSNode, index: u32) ?TSNode {
-    return nodeOrNull(ffi.ts_node_child(self.handle, index));
+    return self.nodeOrNull(ffi.ts_node_child(self.handle, index));
 }
 
 pub inline fn isNamed(self: TSNode) bool {
@@ -80,15 +80,15 @@ pub inline fn namedChildCount(self: TSNode) usize {
 }
 
 pub inline fn namedChild(self: TSNode, index: u32) ?TSNode {
-    return nodeOrNull(ffi.ts_node_named_child(self.handle, index));
+    return self.nodeOrNull(ffi.ts_node_named_child(self.handle, index));
 }
 
 pub inline fn nextNamedSibling(self: TSNode) ?TSNode {
-    return nodeOrNull(ffi.ts_node_next_named_sibling(self.handle));
+    return self.nodeOrNull(ffi.ts_node_next_named_sibling(self.handle));
 }
 
 pub inline fn prevNamedSibling(self: TSNode) ?TSNode {
-    return nodeOrNull(ffi.ts_node_prev_named_sibling(self.handle));
+    return self.nodeOrNull(ffi.ts_node_prev_named_sibling(self.handle));
 }
 
 pub inline fn getTypeAsString(self: TSNode) [*c]const u8 {
@@ -114,4 +114,18 @@ pub inline fn toString(self: TSNode) [*c]u8 {
 
 pub inline fn symbol(self: TSNode) ffi.TSSymbol {
     return ffi.ts_node_symbol(self.handle);
+}
+
+pub fn firstChildOfType(self: TSNode, comptime enum_value: anytype) !?TSNode {
+    const child_count = self.childCount();
+    for (0..child_count) |i| {
+        const c = self.child(i) orelse continue;
+        const child_type = try c.getTypeAsEnum(@TypeOf(enum_value)) orelse continue;
+
+        if (child_type == enum_value) {
+            return c;
+        }
+    }
+
+    return null;
 }

@@ -4,86 +4,13 @@ const gd = @import("tree-sitter-gdscript");
 const c_allocator = std.heap.raw_c_allocator;
 
 const TSParser = ts.TSParser;
+const Context = @import("Context.zig");
+const enums = @import("enums.zig");
+const utils = @import("utils.zig");
 
-const GdNodeType = enum {
-    source,
-    extends_statement,
-    const_statement,
-    signal_statement,
-    variable_statement,
-    function_definition,
-    identifier,
-    attribute,
-    array,
-    string,
-    binary_operator,
-    arguments,
-    attribute_call,
-    expression_statement,
-    call,
-    assignment,
-    body,
-    if_statement,
-    typed_parameter,
-    parameters,
-    name,
-    func,
-    conditional_expression,
-    pattern_section,
-    match,
-    match_body,
-    match_statement,
-    integer,
-    @"return",
-    return_statement,
-    else_clause,
-    elif,
-    elif_clause,
-    get,
-    get_body,
-    set,
-    set_body,
-    setget,
-    extends,
-    @"const",
-    signal,
-    comparison_operator,
-    inferred_type,
-    @":=",
-    @"var",
-    true,
-    false,
-    type,
-    @"if",
-    @"else",
-    @"(",
-    @")",
-    @"[",
-    @"]",
-    @"{",
-    @"}",
-    @",",
-    @".",
-    @":",
-    @";",
-    @"+",
-    @"-",
-    @"*",
-    @"/",
-    @"%",
-    @"<",
-    @">",
-    @"<=",
-    @">=",
-    @"==",
-    @"!=",
-    @"=",
-    @"&&",
-    @"||",
-    @"!",
-    @"\"",
-    @"->",
-};
+const statements = @import("statements.zig");
+
+const GdNodeType = enums.GdNodeType;
 
 var unknown_node_types: std.ArrayList([*c]const u8) = undefined;
 
@@ -125,6 +52,12 @@ pub fn main() !void {
 
     unknown_node_types = std.ArrayList([*c]const u8).init(arena_allocator);
 
+    var stdout = std.io.getStdOut();
+    const stdout_writer = stdout.writer();
+
+    var buffered_writer = std.io.bufferedWriter(stdout_writer);
+    const br = buffered_writer.writer();
+
     for (paths.items) |path| {
         const file = try std.fs.cwd().openFile(path, .{});
 
@@ -137,7 +70,8 @@ pub fn main() !void {
         const root_node = tree.rootNode();
 
         var cursor = root_node.cursor();
-        try depthFirstWalk(&cursor);
+
+        try depthFirstWalk(&cursor, br, .{});
     }
 
     if (unknown_node_types.items.len > 0) {
@@ -147,26 +81,46 @@ pub fn main() !void {
             std.log.warn("{s}", .{node_type});
         }
     }
+
+    try buffered_writer.flush();
 }
 
-fn depthFirstWalk(cursor: *ts.TSTreeCursor) !void {
+fn noOp(node: ts.TSNode, writer: anytype, context: Context) anyerror!void {
+    _ = node;
+    _ = writer;
+    _ = context;
+
+    return;
+}
+
+fn depthFirstWalk(cursor: *ts.TSTreeCursor, writer: anytype, context: Context) !void {
+    try utils.writeIndent(writer, context);
+
     const current_node = cursor.currentNode();
-    const node_type = current_node.getTypeAsEnum(GdNodeType) catch @panic("unknown node type");
+    const node_type = try current_node.getTypeAsEnum(GdNodeType);
 
     if (node_type) |nt| {
-        if (current_node.isNamed()) {
-            std.log.debug("{}, {s}", .{ nt, current_node.text() });
+        // for (0..context.indent_level) |_| {
+        //     std.debug.print("{s}", .{context.indent_str});
+        // }
+
+        // std.debug.print("{}\n", .{nt});
+
+        switch (nt) {
+            .extends_statement => try statements.extends_statement(current_node, writer, context),
+            .variable_statement => try statements.variable_statement(current_node, writer, context),
+            else => {},
         }
     } else {
         try unknown_node_types.append(current_node.getTypeAsString());
     }
 
     if (cursor.gotoFirstChild()) {
-        try depthFirstWalk(cursor);
+        try depthFirstWalk(cursor, writer, context);
         _ = cursor.gotoParent();
     }
 
     while (cursor.gotoNextSibling()) {
-        try depthFirstWalk(cursor);
+        try depthFirstWalk(cursor, writer, context);
     }
 }
