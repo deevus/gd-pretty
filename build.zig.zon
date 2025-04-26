@@ -6,7 +6,9 @@
     //
     // It is redundant to include "zig" in this name because it is already
     // within the Zig package namespace.
-    .name = "gd-pretty",
+    .name = .gd_pretty,
+
+    .fingerprint = 0xea8dc3652d2179b4,
 
     // This is a [Semantic Version](https://semver.org/).
     // In a future version of Zig it will be used for package deduplication.
@@ -23,9 +25,13 @@
     // Once all dependencies are fetched, `zig build` no longer requires
     // internet connectivity.
     .dependencies = .{
-        .@"tree-sitter" = .{
-            .url = "https://github.com/tree-sitter/tree-sitter/archive/refs/tags/v0.24.3.tar.gz",
-            .hash = "1220d7730b4b548db37a9c352adc8bda88d9cada68c02883fcef2c6dca3b83fb642e",
+        .tree_sitter = .{
+            .url = "git+https://github.com/tree-sitter/tree-sitter#d4d8ed32b324a846d6bbe6078393d7b3a2975519",
+            .hash = "tree_sitter-0.26.0-Tw2sR3K4CwA_GbHqW5STjLdERuYa_LBew1nhD3WG-vSw",
+        },
+        .tree_sitter_gdscript = .{
+            .url = "git+https://github.com/PrestonKnopp/tree-sitter-gdscript#48b49330888a4669b48619b211cc8da573827725",
+            .hash = "N-V-__8AAA-aGwDV75toHaUpLbuLo0rTTJ8lKOVPJNspiykZ",
         },
     },
     .paths = .{
