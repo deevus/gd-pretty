@@ -7,11 +7,15 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable(.{
-        .name = "gd-pretty",
+    const mod_exe = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
+    });
+
+    const exe = b.addExecutable(.{
+        .name = "gd-pretty",
+        .root_module = mod_exe,
     });
 
     const tree_sitter_lib = b.dependency("tree_sitter", .{
@@ -26,7 +30,7 @@ pub fn build(b: *std.Build) void {
     tree_sitter_module.addIncludePath(tree_sitter_include_path);
 
     exe.linkLibrary(tree_sitter_lib.artifact("tree-sitter"));
-    exe.root_module.addImport("tree-sitter", tree_sitter_module);
+    mod_exe.addImport("tree-sitter", tree_sitter_module);
 
     const dep_tree_sitter_gdscript = b.dependency("tree_sitter_gdscript", .{});
 
@@ -53,7 +57,14 @@ pub fn build(b: *std.Build) void {
     tree_sitter_gdscript_module.addIncludePath(dep_tree_sitter_gdscript.builder.path("bindings/swift/"));
 
     exe.linkLibrary(lib_tree_sitter_gdscript);
-    exe.root_module.addImport("tree-sitter-gdscript", tree_sitter_gdscript_module);
+    mod_exe.addImport("tree-sitter-gdscript", tree_sitter_gdscript_module);
+
+    // Case module
+    const dep_case = b.dependency("case", .{});
+    const mod_case = b.createModule(.{
+        .root_source_file = dep_case.builder.path("src/lib.zig"),
+    });
+    mod_exe.addImport("case", mod_case);
 
     b.installArtifact(lib_tree_sitter_gdscript);
     b.installArtifact(exe);

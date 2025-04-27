@@ -1,3 +1,4 @@
+const std = @import("std");
 const ffi = @import("ffi.zig");
 
 const TSTreeCursor = @This();
@@ -32,12 +33,12 @@ pub inline fn currentNode(self: TSTreeCursor) TSNode {
     return TSNode.init(node, self.tree);
 }
 
-pub inline fn currentFieldName(self: *TSTreeCursor) ?[*c]const u8 {
+pub inline fn currentFieldName(self: *TSTreeCursor) ?[]const u8 {
     const field_name = ffi.ts_tree_cursor_current_field_name(&self.handle);
 
     if (field_name == 0) {
         return null;
     }
 
-    return field_name;
+    return std.mem.span(field_name);
 }

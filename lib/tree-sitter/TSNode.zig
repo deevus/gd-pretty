@@ -91,8 +91,8 @@ pub inline fn prevNamedSibling(self: TSNode) ?TSNode {
     return self.nodeOrNull(ffi.ts_node_prev_named_sibling(self.handle));
 }
 
-pub inline fn getTypeAsString(self: TSNode) [*c]const u8 {
-    return ffi.ts_node_type(self.handle);
+pub inline fn getTypeAsString(self: TSNode) []const u8 {
+    return std.mem.span(ffi.ts_node_type(self.handle));
 }
 
 pub fn getTypeAsEnum(self: TSNode, comptime E: type) !?E {
@@ -108,8 +108,8 @@ pub inline fn equals(self: TSNode, other: TSNode) bool {
     return ffi.ts_node_eq(self.handle, other.handle);
 }
 
-pub inline fn toString(self: TSNode) [*c]u8 {
-    return ffi.ts_node_string(self.handle);
+pub inline fn toString(self: TSNode) []const u8 {
+    return std.mem.span(ffi.ts_node_string(self.handle));
 }
 
 pub inline fn symbol(self: TSNode) ffi.TSSymbol {
