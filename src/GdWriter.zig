@@ -132,11 +132,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) !void {
 
 pub fn writeBody(self: *GdWriter, node: Node) !void {
     assert(try node.getTypeAsEnum(NodeType) == .body);
-
     var cursor = node.child(0).?.cursor();
-
-    std.debug.print("body child: {s}\n", .{cursor.currentNode().getTypeAsString()});
-
     try formatter.depthFirstWalk(&cursor, self.out, self.context);
 }
 
@@ -156,7 +152,8 @@ pub fn writeSignalStatement(self: *GdWriter, node: Node) !void {
         const signal_node = node.child(i).?;
         assert(try signal_node.getTypeAsEnum(NodeType) == .signal);
 
-        try self.out.writeAll("signal ");
+        try self.writeTrimmed(signal_node);
+        try self.out.writeAll(" ");
 
         i += 1;
     }
@@ -171,13 +168,16 @@ pub fn writeSignalStatement(self: *GdWriter, node: Node) !void {
         i += 1;
     }
 
-    // parameters
+    // parameters (optional)
     {
-        const parameters_node = node.child(i).?;
-        assert(try parameters_node.getTypeAsEnum(NodeType) == .parameters);
-
-        try self.writeParameters(parameters_node);
+        if (node.child(i)) |parameters_node| {
+            assert(try parameters_node.getTypeAsEnum(NodeType) == .parameters);
+            try self.writeParameters(parameters_node);
+            i += 1;
+        }
     }
+
+    try self.out.writeAll("\n");
 }
 
 pub fn writeParameters(self: *GdWriter, node: Node) !void {
@@ -338,4 +338,16 @@ pub fn writeReturnStatement(self: *GdWriter, node: Node) anyerror!void {
 
     var cursor = next_node.cursor();
     try formatter.depthFirstWalk(&cursor, self.out, self.context);
+}
+
+pub fn writeClassNameStatement(self: *GdWriter, node: Node) anyerror!void {
+    const class_name_node = node.child(0) orelse unreachable;
+    assert(try class_name_node.getTypeAsEnum(NodeType) == .class_name);
+    try self.writeTrimmed(class_name_node);
+    try self.out.writeAll(" ");
+
+    const name_node = node.child(1) orelse @panic("Identifier following class name expected");
+    assert(try name_node.getTypeAsEnum(NodeType) == .name);
+    try self.writeTrimmed(name_node);
+    try self.out.writeAll("\n");
 }

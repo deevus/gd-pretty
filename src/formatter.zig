@@ -58,11 +58,6 @@ pub fn writeIndent(writer: anytype, context: Context) !void {
 }
 
 pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, writer: anytype, context: Context) !void {
-    var gd_writer = GdWriter.init(.{
-        .writer = writer,
-        .context = context,
-    });
-
     const current_node = cursor.currentNode();
     const node_type = try current_node.getTypeAsEnum(GdNodeType);
 
@@ -70,8 +65,17 @@ pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, writer: anytype, context: Contex
         var handled = false;
         const tag_name = @tagName(nt);
 
+        std.debug.print("Node type: {s}\n", .{tag_name});
+
         if (node_type_map.get(tag_name)) |handler| if (handler.exists) {
+            std.debug.print("Calling handler for {s}\n", .{tag_name});
+
+            var gd_writer = GdWriter.init(.{
+                .writer = writer,
+                .context = context,
+            });
             try handler.write_fn.?(&gd_writer, current_node);
+
             handled = true;
         } else {
             std.debug.print("Unhandled node type: {}\n", .{nt});

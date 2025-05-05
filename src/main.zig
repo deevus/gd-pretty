@@ -72,6 +72,6 @@ pub fn main() !void {
 
         try formatter.depthFirstWalk(&cursor, writer, .{});
 
-        try formatter.printTree(root_node, std.io.getStdOut().writer());
+        // try formatter.printTree(root_node, std.io.getStdOut().writer());
     }
 }
