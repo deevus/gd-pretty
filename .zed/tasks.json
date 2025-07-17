@@ -1,0 +1,26 @@
+[
+    {
+        "label": "Build",
+        "command": "zig",
+        "args": ["build"],
+        "use_new_terminal": false,
+        "allow_concurrent_runs": false,
+        "reveal": "always",
+        "reveal_target": "dock",
+        "hide": "never",
+        "shell": "system",
+        "tags": ["gd-pretty"]
+    },
+    {
+        "label": "Test",
+        "command": "zig",
+        "args": ["build", "test"],
+        "use_new_terminal": false,
+        "allow_concurrent_runs": false,
+        "reveal": "always",
+        "reveal_target": "dock",
+        "hide": "never",
+        "shell": "system",
+        "tags": ["gd-pretty"]
+    }
+]
