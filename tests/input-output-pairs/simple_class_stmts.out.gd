@@ -1,13 +1,6 @@
-# aaa
 pass
-var x
-# bbb
-
-var y
-
-var z  # ccc
-
-# ddd
-var q
-var w
-# eee
+var x 
+var y 
+var z 
+var q 
+var w 

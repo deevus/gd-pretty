@@ -75,3 +75,48 @@ pub fn main() !void {
         // try formatter.printTree(root_node, std.io.getStdOut().writer());
     }
 }
+
+test "input output pairs" {
+    const ts_parser = TSParser.init();
+    defer ts_parser.deinit();
+
+    const ts_gdscript = gd.tree_sitter_gdscript();
+    _ = ts_parser.setLanguage(@ptrCast(ts_gdscript));
+
+    var dir = try std.fs.cwd().openDir("tests/input-output-pairs", .{
+        .iterate = true,
+    });
+    defer dir.close();
+
+    var arena = ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    var it = dir.iterateAssumeFirstIteration();
+    while (try it.next()) |entry| {
+        if (entry.kind != .file) continue;
+
+        if (std.mem.endsWith(u8, entry.name, ".in.gd")) {
+            const in_file = try dir.openFile(entry.name, .{});
+            defer in_file.close();
+
+            const out_file_name = try std.fmt.allocPrint(allocator, "{s}.out.gd", .{
+                entry.name[0 .. entry.name.len - 6],
+            });
+            var out_file = try dir.createFile(out_file_name, .{});
+            defer out_file.close();
+
+            const buffer = try allocator.alloc(u8, try in_file.getEndPos());
+            _ = try in_file.readAll(buffer);
+
+            var tree = try ts_parser.parseString(buffer);
+            var cursor = tree.rootNode().cursor();
+
+            try formatter.depthFirstWalk(&cursor, out_file.writer().any(), .{});
+        }
+    }
+}
+
+const ArenaAllocator = std.heap.ArenaAllocator;
+
+const testing = std.testing;
