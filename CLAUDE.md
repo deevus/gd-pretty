@@ -138,3 +138,8 @@ To create a new release:
    - Create GitHub release with artifacts
 
 Tags must follow semver format: `v0.1.0`, `v1.2.3`, etc.
+```
+
+## Development Workflow
+
+- Double check GitHub workflow changes using `act`
