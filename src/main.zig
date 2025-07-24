@@ -1,7 +1,7 @@
 const std = @import("std");
 const ts = @import("tree-sitter");
 const gd = @import("tree-sitter-gdscript");
-const c_allocator = std.heap.raw_c_allocator;
+const cli = @import("cli");
 
 const TSParser = ts.TSParser;
 const Context = @import("Context.zig");
@@ -11,41 +11,88 @@ const statements = @import("statements.zig");
 
 const GdNodeType = enums.GdNodeType;
 
+const VERSION = "0.1.0";
+
+var config = struct {
+    files: []const []const u8 = &.{},
+    version: bool = false,
+}{};
+
 pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    var r = try cli.AppRunner.init(allocator);
+
+    const app = cli.App{
+        .command = cli.Command{
+            .name = "gd-pretty",
+            .description = .{
+                .one_line = "A GDScript code formatter",
+                .detailed = "Formats GDScript files to ensure consistent code style using tree-sitter for parsing.",
+            },
+            .options = try r.allocOptions(&.{
+                .{
+                    .long_name = "version",
+                    .short_alias = 'v',
+                    .help = "show version information",
+                    .value_ref = r.mkRef(&config.version),
+                },
+            }),
+            .target = cli.CommandTarget{
+                .action = cli.CommandAction{ 
+                    .positional_args = cli.PositionalArgs{
+                        .optional = try r.allocPositionalArgs(&.{
+                            .{
+                                .name = "files",
+                                .help = "GDScript files to format",
+                                .value_ref = r.mkRef(&config.files),
+                            },
+                        }),
+                    },
+                    .exec = format_files 
+                },
+            },
+        },
+        .version = VERSION,
+    };
+
+    return r.run(&app);
+}
+
+fn format_files() !void {
+    if (config.version) {
+        const stdout = std.io.getStdOut().writer();
+        try stdout.print("gd-pretty {s}\n", .{VERSION});
+        return;
+    }
+
+    // Handle positional arguments - zig-cli should populate config.files
+    if (config.files.len == 0) {
+        const stderr = std.io.getStdErr().writer();
+        try stderr.print("Error: no files provided\n\nUSAGE: gd-pretty [OPTIONS] <files...>\n\nRun 'gd-pretty --help' for more information.\n", .{});
+        std.process.exit(1);
+    }
+
     const ts_parser = TSParser.init();
     defer ts_parser.deinit();
 
     const ts_gdscript = gd.tree_sitter_gdscript();
     const success = ts_parser.setLanguage(@ptrCast(ts_gdscript));
-
-    std.log.info("gdscript loaded: {}", .{success});
+    if (!success) {
+        const stderr = std.io.getStdErr().writer();
+        try stderr.print("Error: failed to load GDScript grammar\n", .{});
+        std.process.exit(1);
+    }
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
-
-    var cli_args = try std.process.argsWithAllocator(allocator);
-    defer cli_args.deinit();
-
-    // skip the first arg, which is the program name
-    _ = cli_args.next();
-
-    var paths = std.ArrayList([]const u8).init(allocator);
-    defer paths.deinit();
-
-    while (cli_args.next()) |arg| {
-        try paths.append(arg);
-    }
-
-    // no paths provided
-    if (paths.items.len == 0) {
-        std.log.err("no paths provided", .{});
-        return;
-    }
 
     var arena = std.heap.ArenaAllocator.init(allocator);
     defer arena.deinit();
-
-    var arena_allocator = arena.allocator();
+    const arena_allocator = arena.allocator();
 
     var stdout = std.io.getStdOut();
     const stdout_writer = stdout.writer();
@@ -57,22 +104,45 @@ pub fn main() !void {
     var counting_writer = std.io.countingWriter(br);
     const writer = counting_writer.writer().any();
 
-    for (paths.items) |path| {
-        const file = try std.fs.cwd().openFile(path, .{});
+    for (config.files) |path| {
+        const file = std.fs.cwd().openFile(path, .{}) catch |err| {
+            const stderr = std.io.getStdErr().writer();
+            try stderr.print("Error: failed to open file '{s}': {}\n", .{ path, err });
+            std.process.exit(1);
+        };
+        defer file.close();
 
-        const buf = try arena_allocator.alloc(u8, try file.getEndPos());
-        _ = try file.readAll(buf);
+        const buf = arena_allocator.alloc(u8, file.getEndPos() catch |err| {
+            const stderr = std.io.getStdErr().writer();
+            try stderr.print("Error: failed to read file '{s}': {}\n", .{ path, err });
+            std.process.exit(1);
+        }) catch |err| {
+            const stderr = std.io.getStdErr().writer();
+            try stderr.print("Error: failed to allocate memory for file '{s}': {}\n", .{ path, err });
+            std.process.exit(1);
+        };
 
-        var tree = try ts_parser.parseString(buf);
+        _ = file.readAll(buf) catch |err| {
+            const stderr = std.io.getStdErr().writer();
+            try stderr.print("Error: failed to read file '{s}': {}\n", .{ path, err });
+            std.process.exit(1);
+        };
+
+        var tree = ts_parser.parseString(buf) catch |err| {
+            const stderr = std.io.getStdErr().writer();
+            try stderr.print("Error: failed to parse file '{s}': {}\n", .{ path, err });
+            std.process.exit(1);
+        };
         defer tree.deinit();
 
         const root_node = tree.rootNode();
-
         var cursor = root_node.cursor();
 
-        try formatter.depthFirstWalk(&cursor, writer, .{});
-
-        // try formatter.printTree(root_node, std.io.getStdOut().writer());
+        formatter.depthFirstWalk(&cursor, writer, .{}) catch |err| {
+            const stderr = std.io.getStdErr().writer();
+            try stderr.print("Error: failed to format file '{s}': {}\n", .{ path, err });
+            std.process.exit(1);
+        };
     }
 }
 
@@ -118,5 +188,4 @@ test "input output pairs" {
 }
 
 const ArenaAllocator = std.heap.ArenaAllocator;
-
 const testing = std.testing;

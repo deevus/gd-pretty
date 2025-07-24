@@ -83,6 +83,12 @@ pub fn build(b: *std.Build) void {
     });
     mod_exe.addImport("case", mod_case);
 
+    // CLI module
+    const cli_dep = b.dependency("cli", .{});
+    const cli_mod = cli_dep.module("cli");
+    mod_exe.addImport("cli", cli_mod);
+
+
     b.installArtifact(lib_tree_sitter_gdscript);
     b.installArtifact(exe);
 
