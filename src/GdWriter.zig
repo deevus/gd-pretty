@@ -351,3 +351,404 @@ pub fn writeClassNameStatement(self: *GdWriter, node: Node) anyerror!void {
     try self.writeTrimmed(name_node);
     try self.out.writeAll("\n");
 }
+
+// ============================================================================
+// STUB METHODS - Need implementation for full GDScript support
+// ============================================================================
+
+// Critical Language Features
+pub fn writeSource(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement source node handling (root of the AST)
+    try self.writeTrimmed(node);
+}
+
+pub fn writeConstStatement(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement const declarations (const VAR = value)
+    try self.writeTrimmed(node);
+}
+
+pub fn writeIfStatement(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement if statements with proper indentation
+    try self.writeTrimmed(node);
+}
+
+pub fn writeForStatement(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement for loops with proper indentation
+    try self.writeTrimmed(node);
+}
+
+pub fn writeAssignment(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement variable assignments (var = value)
+    try self.writeTrimmed(node);
+}
+
+pub fn writeAugmentedAssignment(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement compound assignments (+=, -=, etc.)
+    try self.writeTrimmed(node);
+}
+
+pub fn writeExpressionStatement(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement expression statements
+    try self.writeTrimmed(node);
+}
+
+pub fn writeMatchStatement(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement match statements with proper indentation
+    try self.writeTrimmed(node);
+}
+
+pub fn writeMatchBody(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement match body with proper indentation
+    try self.writeTrimmed(node);
+}
+
+pub fn writePatternSection(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement match patterns
+    try self.writeTrimmed(node);
+}
+
+pub fn writeElseClause(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement else clauses with proper indentation
+    try self.writeTrimmed(node);
+}
+
+pub fn writeElifClause(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement elif clauses with proper indentation
+    try self.writeTrimmed(node);
+}
+
+pub fn writeLambda(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement lambda expressions
+    try self.writeTrimmed(node);
+}
+
+pub fn writeGetBody(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement getter method bodies
+    try self.writeTrimmed(node);
+}
+
+pub fn writeSetBody(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement setter method bodies
+    try self.writeTrimmed(node);
+}
+
+pub fn writeSetget(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement setget property declarations
+    try self.writeTrimmed(node);
+}
+
+pub fn writeGetNode(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement get_node expressions ($Node)
+    try self.writeTrimmed(node);
+}
+
+// Data Types and Literals
+pub fn writeArray(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement array literals [1, 2, 3] with proper spacing
+    try self.writeTrimmed(node);
+}
+
+pub fn writeString(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement string literals with proper escaping
+    try self.writeTrimmed(node);
+}
+
+pub fn writeInteger(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement integer literals
+    try self.writeTrimmed(node);
+}
+
+pub fn writeFloat(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement float literals
+    try self.writeTrimmed(node);
+}
+
+pub fn writeDictionary(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement dictionary literals {key: value} with proper spacing
+    try self.writeTrimmed(node);
+}
+
+pub fn writePair(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement key-value pairs in dictionaries
+    try self.writeTrimmed(node);
+}
+
+pub fn writeTrue(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement boolean true literal
+    try self.writeTrimmed(node);
+}
+
+pub fn writeFalse(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement boolean false literal
+    try self.writeTrimmed(node);
+}
+
+// Expressions and Operations
+pub fn writeBinaryOperator(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement binary operations with proper spacing
+    try self.writeTrimmed(node);
+}
+
+pub fn writeComparisonOperator(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement comparison operations with proper spacing
+    try self.writeTrimmed(node);
+}
+
+pub fn writeConditionalExpression(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement ternary/conditional expressions
+    try self.writeTrimmed(node);
+}
+
+pub fn writeAttributeCall(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement method calls on objects
+    try self.writeTrimmed(node);
+}
+
+pub fn writeArguments(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement function call arguments with proper spacing
+    try self.writeTrimmed(node);
+}
+
+pub fn writeParenthesizedExpression(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement expressions in parentheses
+    try self.writeTrimmed(node);
+}
+
+// Type System
+pub fn writeInferredType(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement type inference markers (:=)
+    try self.writeTrimmed(node);
+}
+
+pub fn writeTypedParameter(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement function parameters with types
+    try self.writeTrimmed(node);
+}
+
+pub fn writeAnnotation(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement single annotation (@export, @onready, etc.)
+    try self.writeTrimmed(node);
+}
+
+pub fn writeAnnotations(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement multiple annotations
+    try self.writeTrimmed(node);
+}
+
+// Keywords (many may be handled by their parent nodes)
+pub fn writeSignal(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement signal keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writePass(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement pass keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeFunc(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement func keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeExtends(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement extends keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeConst(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement const keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeVar(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement var keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeFor(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement for keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeIn(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement in keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeIf(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement if keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeElse(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement else keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeElif(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement elif keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeReturn(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement return keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeGet(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement get keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeSet(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement set keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeMatch(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement match keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeClassName(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement class_name keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeClass(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement class keyword
+    try self.writeTrimmed(node);
+}
+
+// Utility Methods
+pub fn writeComment(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement comment preservation with proper spacing
+    try self.writeTrimmed(node);
+}
+
+pub fn writeName(self: *GdWriter, node: Node) anyerror!void {
+    // TODO: Implement name nodes (may be handled by writeIdentifier)
+    try self.writeTrimmed(node);
+}
+
+// Punctuation and Operators (low priority - often just pass through)
+pub fn writeAt(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeOpenParen(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeCloseParen(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeOpenBracket(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeCloseBracket(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeOpenBrace(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeCloseBrace(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeComma(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeDot(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeColon(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeSemicolon(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writePlus(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writePlusEquals(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeMinus(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeMultiply(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeDivide(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeModulo(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeLessThan(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeGreaterThan(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeLessEqual(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeGreaterEqual(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeEquals(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeNotEquals(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeAssign(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeLogicalAnd(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeLogicalOr(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeLogicalNot(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeQuote(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeArrow(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeColonEquals(self: *GdWriter, node: Node) anyerror!void {
+    try self.writeTrimmed(node);
+}

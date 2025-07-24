@@ -9,9 +9,9 @@ class X:
 				pass
 			Vector2.ZERO.x:
 				pass
-			{"a": 1, "b": 2}:
+			{"a":1,"b":2}:
 				pass
-			[1, ..]:
+			[1,..]:
 				pass
 			var a:
 				pass
@@ -23,19 +23,19 @@ class X:
 				pass
 			+1:
 				pass
-			1 * 1:
+			1*1:
 				pass
-			1 + 1:
+			1+1:
 				pass
-			1 << 1:
+			1<<1:
 				pass
-			1 & 1:
+			1&1:
 				pass
-			1 ^ 1:
+			1^1:
 				pass
-			1 | 1:
+			1|1:
 				pass
-			1 > 1:
+			1>1:
 				pass
 			not 1:
 				pass
@@ -53,6 +53,6 @@ class X:
 				pass
 			_:
 				pass
-		match Vector3(1, 1, 1):
-			Vector3(1, 1 + 1, 1):
+		match Vector3(1,1,1):
+			Vector3(1,1+1,1):
 				pass

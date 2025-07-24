@@ -98,6 +98,7 @@ Check `TODO.md` for a prioritized list of improvements needed for the formatter,
 ## Development Practices
 
 - Always keep TODO.md up-to-date
+- Remove completed items from TODO.md and make sure they are added to CHANGELOG.md
 
 ## Quick Commands
 

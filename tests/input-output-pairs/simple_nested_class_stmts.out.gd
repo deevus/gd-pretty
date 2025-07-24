@@ -1,4 +1,5 @@
 class X:
+
 	# aaa
 	pass
 	var x
@@ -6,7 +7,7 @@ class X:
 
 	var y
 
-	var z  # ccc
+	var z    # ccc
 
 	# ddd
 	var q

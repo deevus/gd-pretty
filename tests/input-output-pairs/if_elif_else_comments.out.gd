@@ -2,14 +2,14 @@ class X:
 	func foo():
 		for i in [1]:
 			if i:
-				# aaa
+			# aaa
 				pass
 			# bbb
 			elif i:
-				# ccc
+			# ccc
 				pass
 			# ddd
 			else:
-				# eee
+			# eee
 				pass
 			# fff

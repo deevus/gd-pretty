@@ -6,14 +6,7 @@ This file tracks improvements needed for the gd-pretty GDScript formatter.
 
 ## Critical Issues
 
-### 1. Fix Generic Node Handling
-**Priority: CRITICAL**
-- **Issue**: Unhandled node types are completely omitted from output, breaking the code
-- **Impact**: Control flow statements (if/for/while) disappear entirely from formatted output
-- **Solution**: Need fallback mechanism in `formatter.zig:depthFirstWalk` to preserve original text for unhandled nodes
-- **Files**: `src/formatter.zig`
-
-### 2. Replace Panic-Driven Error Handling  
+### 1. Replace Panic-Driven Error Handling  
 **Priority: CRITICAL**
 - **Issue**: 48+ instances of `unreachable` and `@panic` throughout codebase
 - **Impact**: Tool crashes on unexpected input instead of graceful error handling
@@ -22,29 +15,31 @@ This file tracks improvements needed for the gd-pretty GDScript formatter.
 
 ## High Priority Features
 
-### 3. Implement Missing Language Constructs
+### 2. Implement Proper Language Construct Formatting
 **Priority: HIGH**
-- **Control flow**: if/elif/else, for loops, while loops, match statements
-- **Literals**: strings, numbers, booleans, arrays, dictionaries  
-- **Operators**: binary operators, comparisons, assignments
-- **Comments**: proper preservation and formatting
+- **Current State**: All node types have stub methods that preserve original text  
+- **Goal**: Replace stubs with proper formatting implementations for:
+  - **Control flow**: if/elif/else, for loops, while loops, match statements (proper indentation)
+  - **Literals**: strings, numbers, booleans, arrays, dictionaries (spacing and formatting)
+  - **Operators**: binary operators, comparisons, assignments (consistent spacing)
+  - **Comments**: proper preservation and positioning
 - **Files**: `src/GdWriter.zig`, `src/enums.zig`
 
-### 4. Basic User Experience (Remaining)
+### 3. Basic User Experience (Remaining)
 **Priority: HIGH**
 - Support stdin/stdout workflows for editor integration
 - **Files**: `src/main.zig`
 
 ## Medium Priority Improvements
 
-### 5. Configuration System
+### 4. Configuration System
 **Priority: MEDIUM**
 - CLI options for indent size/type, line length
 - Configuration file support (.gdpretty.toml)
 - Multiple formatting profiles (compact, expanded, etc.)
 - **Files**: `src/Context.zig`, `src/main.zig`
 
-### 6. Better File Handling
+### 5. Better File Handling
 **Priority: MEDIUM**  
 - In-place editing with `--write` flag
 - Directory recursion and glob patterns
@@ -52,7 +47,7 @@ This file tracks improvements needed for the gd-pretty GDScript formatter.
 - `--diff` mode to show changes without applying
 - **Files**: `src/main.zig`
 
-### 7. Robustness
+### 6. Robustness
 **Priority: MEDIUM**
 - Proper exit codes for different error conditions
 - Memory usage optimization for large files
@@ -61,14 +56,14 @@ This file tracks improvements needed for the gd-pretty GDScript formatter.
 
 ## Long-term Enhancements
 
-### 8. Development Integration
+### 7. Development Integration
 **Priority: LOW**
 - Language Server Protocol support
 - Editor plugin examples and documentation
 - Git pre-commit hook integration guide
 - **Files**: New files, documentation
 
-### 9. Distribution
+### 8. Distribution
 **Priority: LOW**
 - Binary releases via GitHub Actions
 - Package manager integration (Homebrew, etc.)
@@ -120,11 +115,10 @@ const node = parent.child(i) orelse return error.MalformedAST;
 
 ## Priority Order for Implementation
 
-1. **Fix generic node handling** - Without this, formatter produces invalid code
-2. **Basic error handling** - Replace panics with proper error returns  
-3. **Implement missing language constructs** - Add dedicated handlers for common node types
-4. **Configuration system** - Allow user customization
-5. **File handling improvements** - Better workflow integration
-6. **Long-term enhancements** - Advanced features and distribution
+1. **Basic error handling** - Replace panics with proper error returns  
+2. **Implement proper formatting** - Improve stub methods to add proper formatting rules
+3. **Configuration system** - Allow user customization
+4. **File handling improvements** - Better workflow integration
+5. **Long-term enhancements** - Advanced features and distribution
 
 For completed items, see CHANGELOG.md

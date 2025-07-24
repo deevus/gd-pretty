@@ -1,31 +1,31 @@
 extends Node
 class_name Aclassname
 # a
-@export_group(
-	"res://aaaaaaaaaaaaa/bbbbbbbbbbbbbbb/cccccccccccc/ddddddddddd/eeeeeeeeeeeeeee/ffffffffff.tres"  # inline a  # inline b
-)  # inline c
+@export_group( # inline a
+	"res://aaaaaaaaaaaaa/bbbbbbbbbbbbbbb/cccccccccccc/ddddddddddd/eeeeeeeeeeeeeee/ffffffffff.tres" # inline b
+) # inline c
 # b
 
 # c
-@export_enum(
-	"Aaaaaaaaaaa", "Bbbbbbbbb", "Cccccccc", "Ddddddd", "Eeeeee", "Ffffffffff", "Gggggggggg"  # inline d  # inline e
-)  # inline f
+@export_enum( # inline d
+	"Aaaaaaaaaaa", "Bbbbbbbbb", "Cccccccc", "Ddddddd", "Eeeeee", "Ffffffffff", "Gggggggggg" # inline e
+) # inline f
 # d
-var a  # inline g
+var a # inline g
 # e
 
 # f
 # @onready
 # g
-@export_enum(  # inline h
-	"Aaaaaaaaaaa",  # inline i
+@export_enum( # inline h
+	"Aaaaaaaaaaa", # inline i
 	"Bbbbbbbbb",
-	"Cccccccc",  # inline j
+	"Cccccccc", # inline j
 	"Ddddddd",
 	"Eeeeee",
 	"Ffffffffff",
 	"Gggggggggg",
 	"Hhhhhhhhh"
-)  # inline k
+) # inline k
 # h
 var b

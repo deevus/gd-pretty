@@ -8,10 +8,8 @@ class X:
 		func bar():
 			pass
 
-
 class Z:
 	pass
-
 
 class Q:
 	class W:

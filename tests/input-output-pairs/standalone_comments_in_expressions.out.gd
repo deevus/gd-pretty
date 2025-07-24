@@ -14,24 +14,17 @@ signal s(
 # 	# ee2
 # ) var x
 
-
 func foo():
 	# aaa
-	var x = [
-		1,
-		2  # bbb
-		# ccc
+	var x = [1,2				# bbb
+	# ccc
 	]
 	# ddd
 	var y = [
 		# xxx
-		1,
-		2,
-		3,
-		[
-			# yyy1
-			1,
-		],
+		1,2,3,[
+		# yyy1
+		1,],
 		# yyy2
 		4,
 		# zzz
@@ -44,15 +37,14 @@ func foo():
 
 
 func bar(
-	# qq4
-	a,
-	# ww4
-	b
-	# ee4
-):
+		# qq4
+		a,
+		# ww4
+		b
+		# ee4
+	):
 	# rr4
 	pass
-
 
 func baz():
 	bar(

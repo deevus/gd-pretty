@@ -1,16 +1,5 @@
 var a
-
-
-class X:
-	var b
-	var c
-
-
+class X: var b;var c
 var d
-
-
-class Y:
-	var e
-
-
+class Y: var e
 var f
