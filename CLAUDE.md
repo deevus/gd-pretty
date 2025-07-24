@@ -134,7 +134,7 @@ To create a new release:
 5. **GitHub Actions** will automatically:
    - Run tests and linting
    - Verify tag version matches `build.zig.zon`
-   - Build binaries for all platforms
+   - Build binaries for all platforms (Linux, macOS, Windows)
    - Create GitHub release with artifacts
 
 Tags must follow semver format: `v0.1.0`, `v1.2.3`, etc.
