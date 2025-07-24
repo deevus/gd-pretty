@@ -90,6 +90,9 @@ zlint src/**/*.zig
 
 - Remove debug print statements rather than commenting them out
 - Avoid leaving empty blocks when removing code
+- Functions in Zig should be `camelCase`
+- Types in Zig should be `PascalCase`
+- Constants in Zig should be `snake_case`
 
 ## Outstanding Work
 
@@ -107,3 +110,11 @@ Check `TODO.md` for a prioritized list of improvements needed for the formatter,
 # Get current date in AEST
 date -d "TZ='Australia/Sydney' today"
 ```
+
+## Development Guidelines
+
+- Don't make "simple fixes" to work around issues that could use more consideration
+
+## Commit Guidelines
+
+- Run tests before every commit

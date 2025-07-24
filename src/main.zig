@@ -16,14 +16,22 @@ const VERSION = "0.1.0";
 var config = struct {
     files: []const []const u8 = &.{},
     version: bool = false,
+    allocator: std.mem.Allocator = undefined,
 }{};
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+    
+    // Store allocator in config for formatFiles
+    config.allocator = gpa.allocator();
 
-    var r = try cli.AppRunner.init(allocator);
+    // Use arena allocator for CLI parsing to avoid leaks
+    var cli_arena = std.heap.ArenaAllocator.init(gpa.allocator());
+    defer cli_arena.deinit();
+    const cli_allocator = cli_arena.allocator();
+
+    var r = try cli.AppRunner.init(cli_allocator);
 
     const app = cli.App{
         .command = cli.Command{
@@ -51,7 +59,7 @@ pub fn main() !void {
                             },
                         }),
                     },
-                    .exec = format_files 
+                    .exec = formatFiles 
                 },
             },
         },
@@ -61,7 +69,7 @@ pub fn main() !void {
     return r.run(&app);
 }
 
-fn format_files() !void {
+fn formatFiles() !void {
     if (config.version) {
         const stdout = std.io.getStdOut().writer();
         try stdout.print("gd-pretty {s}\n", .{VERSION});
@@ -86,11 +94,7 @@ fn format_files() !void {
         std.process.exit(1);
     }
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
-    var arena = std.heap.ArenaAllocator.init(allocator);
+    var arena = std.heap.ArenaAllocator.init(config.allocator);
     defer arena.deinit();
     const arena_allocator = arena.allocator();
 

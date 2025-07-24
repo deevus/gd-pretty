@@ -48,6 +48,17 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
   - Clear usage instructions and examples in help text
   - Proper error messages guide users to solutions
 
+#### Fixed (Memory Management)
+- **Memory Leaks**: Fixed memory leaks from zig-cli integration
+  - Implemented proper arena allocator pattern for CLI argument parsing
+  - Eliminated memory leaks that occurred during command-line processing
+  - Maintained single allocator instance throughout application lifecycle
+
+#### Code Quality
+- **Naming Conventions**: Updated function names to follow Zig camelCase convention
+  - `format_files()` → `formatFiles()` 
+  - Improved code consistency with Zig style guidelines
+
 ## Version History
 
 ### [0.1.0] - Initial Release
