@@ -2,6 +2,8 @@
 
 This file tracks improvements needed for the gd-pretty GDScript formatter.
 
+*Last updated: July 24, 2025*
+
 ## Critical Issues
 
 ### 1. Fix Generic Node Handling
@@ -28,11 +30,8 @@ This file tracks improvements needed for the gd-pretty GDScript formatter.
 - **Comments**: proper preservation and formatting
 - **Files**: `src/GdWriter.zig`, `src/enums.zig`
 
-### 4. Basic User Experience
+### 4. Basic User Experience (Remaining)
 **Priority: HIGH**
-- Add `--help` and `--version` flags
-- Remove debug noise with `--quiet` mode  
-- User-friendly error messages instead of stack traces
 - Support stdin/stdout workflows for editor integration
 - **Files**: `src/main.zig`
 
@@ -123,8 +122,9 @@ const node = parent.child(i) orelse return error.MalformedAST;
 
 1. **Fix generic node handling** - Without this, formatter produces invalid code
 2. **Basic error handling** - Replace panics with proper error returns  
-3. **CLI help system** - Make tool discoverable and usable
-4. **Implement missing language constructs** - Add dedicated handlers for common node types
-5. **Configuration system** - Allow user customization
-6. **File handling improvements** - Better workflow integration
-7. **Long-term enhancements** - Advanced features and distribution
+3. **Implement missing language constructs** - Add dedicated handlers for common node types
+4. **Configuration system** - Allow user customization
+5. **File handling improvements** - Better workflow integration
+6. **Long-term enhancements** - Advanced features and distribution
+
+For completed items, see CHANGELOG.md
