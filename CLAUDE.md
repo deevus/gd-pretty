@@ -94,3 +94,15 @@ zlint src/**/*.zig
 ## Outstanding Work
 
 Check `TODO.md` for a prioritized list of improvements needed for the formatter, including critical bugs that cause invalid output and missing language features.
+
+## Development Practices
+
+- Always keep TODO.md up-to-date
+
+## Quick Commands
+
+- Get the current date using `date` command in AEST
+```bash
+# Get current date in AEST
+date -d "TZ='Australia/Sydney' today"
+```
