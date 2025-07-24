@@ -1,4 +1,5 @@
 [tools]
 "ubi:DonIsaac/zlint" = "latest"
+"ubi:nektos/act" = "latest"
 zig = "0.14.1"
 zls = "0.14.0"

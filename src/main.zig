@@ -11,7 +11,8 @@ const statements = @import("statements.zig");
 
 const GdNodeType = enums.GdNodeType;
 
-const VERSION = "0.1.0";
+// Version should match build.zig.zon - CI will verify they're in sync
+const version = "0.0.1";
 
 var config = struct {
     files: []const []const u8 = &.{},
@@ -22,7 +23,7 @@ var config = struct {
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
-    
+
     // Store allocator in config for formatFiles
     config.allocator = gpa.allocator();
 
@@ -49,21 +50,18 @@ pub fn main() !void {
                 },
             }),
             .target = cli.CommandTarget{
-                .action = cli.CommandAction{ 
-                    .positional_args = cli.PositionalArgs{
-                        .optional = try r.allocPositionalArgs(&.{
-                            .{
-                                .name = "files",
-                                .help = "GDScript files to format",
-                                .value_ref = r.mkRef(&config.files),
-                            },
-                        }),
-                    },
-                    .exec = formatFiles 
-                },
+                .action = cli.CommandAction{ .positional_args = cli.PositionalArgs{
+                    .optional = try r.allocPositionalArgs(&.{
+                        .{
+                            .name = "files",
+                            .help = "GDScript files to format",
+                            .value_ref = r.mkRef(&config.files),
+                        },
+                    }),
+                }, .exec = formatFiles },
             },
         },
-        .version = VERSION,
+        .version = version,
     };
 
     return r.run(&app);
@@ -72,7 +70,7 @@ pub fn main() !void {
 fn formatFiles() !void {
     if (config.version) {
         const stdout = std.io.getStdOut().writer();
-        try stdout.print("gd-pretty {s}\n", .{VERSION});
+        try stdout.print("gd-pretty {s}\n", .{version});
         return;
     }
 

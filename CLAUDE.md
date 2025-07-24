@@ -118,3 +118,23 @@ date -d "TZ='Australia/Sydney' today"
 ## Commit Guidelines
 
 - Run tests before every commit
+
+## Release Process
+
+To create a new release:
+
+1. **Update version** in `build.zig.zon` and `src/main.zig`
+2. **Update CHANGELOG.md** with release notes
+3. **Commit changes** and push to main
+4. **Create and push git tag**:
+   ```bash
+   git tag v0.0.2
+   git push origin v0.0.2
+   ```
+5. **GitHub Actions** will automatically:
+   - Run tests and linting
+   - Verify tag version matches `build.zig.zon`
+   - Build binaries for all platforms
+   - Create GitHub release with artifacts
+
+Tags must follow semver format: `v0.1.0`, `v1.2.3`, etc.

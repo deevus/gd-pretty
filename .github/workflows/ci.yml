@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        zig-version: ['0.14.1']
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: ${{ matrix.zig-version }}
+    
+    - name: Build
+      run: zig build
+    
+    - name: Run tests
+      run: zig build test
+    
+    - name: Check formatting
+      run: zig fmt --check src/
+    
+    - name: Verify version consistency
+      run: |
+        ZON_VERSION=$(grep -oP '\.version = "\K[^"]+' build.zig.zon)
+        CODE_VERSION=$(grep -oP 'const version = "\K[^"]+' src/main.zig)
+        echo "build.zig.zon version: $ZON_VERSION"
+        echo "src/main.zig version: $CODE_VERSION"
+        if [ "$ZON_VERSION" != "$CODE_VERSION" ]; then
+          echo "Error: Version mismatch between build.zig.zon ($ZON_VERSION) and src/main.zig ($CODE_VERSION)"
+          exit 1
+        fi
+        echo "✅ Versions are in sync"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: '0.14.1'
+    
+    - name: Lint with zig fmt
+      run: zig fmt --check .
+
+  release:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: '0.14.1'
+    
+    - name: Build release binaries
+      run: |
+        # Linux x86_64
+        zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-linux
+        mkdir -p dist/linux-x86_64
+        cp zig-out/bin/gd-pretty dist/linux-x86_64/
+        
+        # Linux ARM64
+        zig build -Doptimize=ReleaseSafe -Dtarget=aarch64-linux
+        mkdir -p dist/linux-arm64
+        cp zig-out/bin/gd-pretty dist/linux-arm64/
+        
+        # macOS x86_64
+        zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-macos
+        mkdir -p dist/macos-x86_64
+        cp zig-out/bin/gd-pretty dist/macos-x86_64/
+        
+        # macOS ARM64
+        zig build -Doptimize=ReleaseSafe -Dtarget=aarch64-macos
+        mkdir -p dist/macos-arm64
+        cp zig-out/bin/gd-pretty dist/macos-arm64/
+        
+        # Windows x86_64
+        zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-windows
+        mkdir -p dist/windows-x86_64
+        cp zig-out/bin/gd-pretty.exe dist/windows-x86_64/
+    
+    - name: Create archives
+      run: |
+        cd dist
+        for dir in */; do
+          if [[ "$dir" == *"windows"* ]]; then
+            zip -r "${dir%/}.zip" "$dir"
+          else
+            tar -czf "${dir%/}.tar.gz" "$dir"
+          fi
+        done
+    
+    - name: Extract version from tag
+      id: version
+      run: |
+        # Extract version from git tag (e.g., v0.1.0 -> 0.1.0)
+        TAG_VERSION=${GITHUB_REF#refs/tags/v}
+        echo "Tag version: $TAG_VERSION"
+        echo "version=v$TAG_VERSION" >> $GITHUB_OUTPUT
+        
+        # Verify tag version matches build.zig.zon
+        ZON_VERSION=$(grep -oP '\.version = "\K[^"]+' build.zig.zon)
+        echo "build.zig.zon version: $ZON_VERSION"
+        
+        if [ "$TAG_VERSION" != "$ZON_VERSION" ]; then
+          echo "❌ Error: Tag version ($TAG_VERSION) doesn't match build.zig.zon ($ZON_VERSION)"
+          echo "Please update build.zig.zon version to match the tag"
+          exit 1
+        fi
+        
+        echo "✅ Tag version matches build.zig.zon"
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.version }}
+        name: Release ${{ steps.version.outputs.version }}
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        files: |
+          dist/*.tar.gz
+          dist/*.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
