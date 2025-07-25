@@ -101,7 +101,7 @@ Check `TODO.md` for a prioritized list of improvements needed for the formatter,
 ## Development Practices
 
 - Always keep TODO.md up-to-date
-- Remove completed items from TODO.md and make sure they are added to CHANGELOG.md
+- REMOVE completed items from TODO.md and ENSURE they are added to CHANGELOG.md with the CURRENT DATE
 
 ## Quick Commands
 
@@ -118,6 +118,7 @@ date -d "TZ='Australia/Sydney' today"
 ## Commit Guidelines
 
 - Run tests before every commit
+- DO NOT co-author git commits
 
 ## Release Process
 
@@ -143,3 +144,10 @@ Tags must follow semver format: `v0.1.0`, `v1.2.3`, etc.
 ## Development Workflow
 
 - Double check GitHub workflow changes using `act`
+```
+
+## Development Guidance
+
+- DO NOT make claims about "production-ready"
+
+```
