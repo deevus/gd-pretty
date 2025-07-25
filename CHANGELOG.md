@@ -2,7 +2,19 @@
 
 This file tracks completed improvements and changes to the gd-pretty GDScript formatter.
 
-## [Unreleased] - July 24, 2025
+## [Unreleased] - July 25, 2025
+
+### Fixed
+- **🚨 CRITICAL: Replace Panic-Driven Error Handling** - Replaced 27 instances of `@panic` and `unreachable` with proper error handling
+  - **Before**: Tool crashed with stack traces on unexpected input or malformed AST nodes
+  - **After**: Graceful error handling with helpful error messages and proper exit codes
+  - **Added Error Types**: `MalformedAST`, `UnexpectedNodeType`, `MissingRequiredChild`, `InvalidNodeStructure`
+  - **Files Fixed**: `src/GdWriter.zig` (15 instances), `src/type.zig` (2 instances), `src/formatter.zig` (1 instance)
+  - **Cleanup**: Removed unused duplicate `src/statements.zig` file
+  - **Testing**: Verified error handling with malformed input, missing files, and edge cases
+  - **Impact**: Tool is now robust and handles errors gracefully instead of crashing
+
+## [Previous Release] - July 24, 2025
 
 ### 🎉 **MAJOR BREAKTHROUGH** - Formatter Now Fully Functional!
 

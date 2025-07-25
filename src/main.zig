@@ -7,7 +7,6 @@ const TSParser = ts.TSParser;
 const Context = @import("Context.zig");
 const enums = @import("enums.zig");
 const formatter = @import("formatter.zig");
-const statements = @import("statements.zig");
 
 const GdNodeType = enums.GdNodeType;
 

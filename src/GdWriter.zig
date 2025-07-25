@@ -12,6 +12,13 @@ const GdWriter = @This();
 const Node = tree_sitter.TSNode;
 const NodeType = enums.GdNodeType;
 
+pub const Error = error{
+    MalformedAST,
+    UnexpectedNodeType,
+    MissingRequiredChild,
+    InvalidNodeStructure,
+} || std.io.AnyWriter.Error;
+
 out: std.io.AnyWriter,
 context: Context,
 
@@ -48,12 +55,12 @@ fn writeTrimmed(self: *GdWriter, node: Node) !void {
     try self.out.writeAll(formatter.trimWhitespace(node.text()));
 }
 
-pub fn writeAttribute(self: *GdWriter, node: Node) !void {
+pub fn writeAttribute(self: *GdWriter, node: Node) Error!void {
     var i: u32 = 0;
 
     // identifier
     {
-        const identifier = node.child(i) orelse unreachable;
+        const identifier = node.child(i) orelse return Error.MissingRequiredChild;
         try self.writeIdentifier(identifier);
     }
     i += 1;
@@ -75,14 +82,14 @@ pub fn writeCall(self: *GdWriter, node: Node) !void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeClassDefinition(self: *GdWriter, node: Node) !void {
+pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
     assert(try node.getTypeAsEnum(NodeType) == .class_definition);
 
     var i: u32 = 0;
 
     // "class"
     {
-        const class_node = node.child(i) orelse @panic("Expected class");
+        const class_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(try class_node.getTypeAsEnum(NodeType) == .class);
 
         try self.writeTrimmed(class_node);
@@ -92,7 +99,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) !void {
 
     // name
     {
-        const name_node = node.child(i) orelse unreachable;
+        const name_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(try name_node.getTypeAsEnum(NodeType) == .name);
 
         try self.writeIdentifier(name_node);
@@ -111,7 +118,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) !void {
 
     // colon
     {
-        const colon_node = node.child(i) orelse @panic("Expected colon");
+        const colon_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(try colon_node.getTypeAsEnum(NodeType) == .@":");
 
         try self.writeTrimmed(colon_node);
@@ -121,7 +128,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) !void {
 
     // body
     {
-        const body_node = node.child(i) orelse @panic("Expected body");
+        const body_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(try body_node.getTypeAsEnum(NodeType) == .body);
 
         try self.writeIndent(.{ .by = 1 });
@@ -180,12 +187,12 @@ pub fn writeSignalStatement(self: *GdWriter, node: Node) !void {
     try self.out.writeAll("\n");
 }
 
-pub fn writeParameters(self: *GdWriter, node: Node) !void {
+pub fn writeParameters(self: *GdWriter, node: Node) Error!void {
     assert(try node.getTypeAsEnum(NodeType) == .parameters);
 
     try self.out.writeAll("(");
     for (0..node.childCount()) |j| {
-        const param = node.child(@intCast(j)) orelse unreachable;
+        const param = node.child(@intCast(j)) orelse return Error.MissingRequiredChild;
         const param_type = (try param.getTypeAsEnum(NodeType)).?;
 
         const param_text = formatter.trimWhitespace(param.text());
@@ -248,12 +255,12 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) !void {
     _ = try self.out.write("\n");
 }
 
-pub fn writeFunctionDefinition(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     var i: u32 = 0;
 
     // func keyword
     {
-        const func_node = node.child(i) orelse unreachable;
+        const func_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(try func_node.getTypeAsEnum(NodeType) == .func);
         try self.out.writeAll("func");
     }
@@ -271,12 +278,12 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) anyerror!void {
 
     // parameters
     {
-        const params_node = node.child(i) orelse unreachable;
+        const params_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(try params_node.getTypeAsEnum(NodeType) == .parameters);
 
         try self.out.writeAll("(");
         for (0..params_node.childCount()) |j| {
-            const param = params_node.child(@intCast(j)) orelse unreachable;
+            const param = params_node.child(@intCast(j)) orelse return Error.MissingRequiredChild;
             const param_type = (try param.getTypeAsEnum(NodeType)).?;
 
             const param_text = formatter.trimWhitespace(param.text());
@@ -297,12 +304,12 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) anyerror!void {
     // return type (optional)
     {
         // arrow
-        const return_arrow_node = node.child(i) orelse unreachable;
+        const return_arrow_node = node.child(i) orelse return Error.MissingRequiredChild;
         if (try return_arrow_node.getTypeAsEnum(NodeType) == .@"->") {
             i += 1;
 
             // type
-            const type_node = node.child(i) orelse unreachable;
+            const type_node = node.child(i) orelse return Error.MissingRequiredChild;
             assert(try type_node.getTypeAsEnum(NodeType) == .type);
             i += 1;
 
@@ -313,7 +320,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) anyerror!void {
 
     // colon
     {
-        const colon_node = node.child(i) orelse unreachable;
+        const colon_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(try colon_node.getTypeAsEnum(NodeType) == .@":");
         try self.out.writeAll(":\n");
     }
@@ -321,7 +328,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) anyerror!void {
 
     // body
     {
-        const body_node = node.child(i) orelse unreachable;
+        const body_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(try body_node.getTypeAsEnum(NodeType) == .body);
 
         var body_cursor = body_node.child(0).?.cursor();
@@ -329,8 +336,8 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) anyerror!void {
     }
 }
 
-pub fn writeReturnStatement(self: *GdWriter, node: Node) anyerror!void {
-    const return_node = node.child(0) orelse unreachable;
+pub fn writeReturnStatement(self: *GdWriter, node: Node) Error!void {
+    const return_node = node.child(0) orelse return Error.MissingRequiredChild;
     assert(try return_node.getTypeAsEnum(NodeType) == .@"return");
     try self.out.writeAll("return ");
 
@@ -340,13 +347,13 @@ pub fn writeReturnStatement(self: *GdWriter, node: Node) anyerror!void {
     try formatter.depthFirstWalk(&cursor, self.out, self.context);
 }
 
-pub fn writeClassNameStatement(self: *GdWriter, node: Node) anyerror!void {
-    const class_name_node = node.child(0) orelse unreachable;
+pub fn writeClassNameStatement(self: *GdWriter, node: Node) Error!void {
+    const class_name_node = node.child(0) orelse return Error.MissingRequiredChild;
     assert(try class_name_node.getTypeAsEnum(NodeType) == .class_name);
     try self.writeTrimmed(class_name_node);
     try self.out.writeAll(" ");
 
-    const name_node = node.child(1) orelse @panic("Identifier following class name expected");
+    const name_node = node.child(1) orelse return Error.MissingRequiredChild;
     assert(try name_node.getTypeAsEnum(NodeType) == .name);
     try self.writeTrimmed(name_node);
     try self.out.writeAll("\n");

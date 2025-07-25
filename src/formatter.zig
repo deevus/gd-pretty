@@ -4,7 +4,6 @@ const case = @import("case");
 
 const Context = @import("Context.zig");
 const enums = @import("enums.zig");
-const statements = @import("statements.zig");
 const attribute = @import("attribute.zig");
 
 const GdNodeType = enums.GdNodeType;
@@ -102,7 +101,7 @@ fn printTreeRecursive(root: ts.TSNode, writer: anytype, depth: usize) !void {
     try writer.writeAll("\n");
 
     for (0..root.childCount()) |i| {
-        const child = root.child(@intCast(i)) orelse unreachable;
+        const child = root.child(@intCast(i)) orelse return; // Skip invalid children
         try printTreeRecursive(child, writer, depth + 1);
     }
 }

@@ -2,20 +2,15 @@
 
 This file tracks improvements needed for the gd-pretty GDScript formatter.
 
-*Last updated: July 24, 2025*
+*Last updated: July 25, 2025*
 
 ## Critical Issues
 
-### 1. Replace Panic-Driven Error Handling  
-**Priority: CRITICAL**
-- **Issue**: 48+ instances of `unreachable` and `@panic` throughout codebase
-- **Impact**: Tool crashes on unexpected input instead of graceful error handling
-- **Solution**: Return proper errors instead of crashing on unexpected input, add graceful degradation for malformed AST nodes
-- **Files**: `src/GdWriter.zig`, `src/formatter.zig`, `src/main.zig`
+None currently.
 
 ## High Priority Features
 
-### 2. Implement Proper Language Construct Formatting
+### 1. Implement Proper Language Construct Formatting
 **Priority: HIGH**
 - **Current State**: All node types have stub methods that preserve original text  
 - **Goal**: Replace stubs with proper formatting implementations for:
@@ -25,21 +20,21 @@ This file tracks improvements needed for the gd-pretty GDScript formatter.
   - **Comments**: proper preservation and positioning
 - **Files**: `src/GdWriter.zig`, `src/enums.zig`
 
-### 3. Basic User Experience (Remaining)
+### 2. Basic User Experience (Remaining)
 **Priority: HIGH**
 - Support stdin/stdout workflows for editor integration
 - **Files**: `src/main.zig`
 
 ## Medium Priority Improvements
 
-### 4. Configuration System
+### 3. Configuration System
 **Priority: MEDIUM**
 - CLI options for indent size/type, line length
 - Configuration file support (.gdpretty.toml)
 - Multiple formatting profiles (compact, expanded, etc.)
 - **Files**: `src/Context.zig`, `src/main.zig`
 
-### 5. Better File Handling
+### 4. Better File Handling
 **Priority: MEDIUM**  
 - In-place editing with `--write` flag
 - Directory recursion and glob patterns
@@ -47,7 +42,7 @@ This file tracks improvements needed for the gd-pretty GDScript formatter.
 - `--diff` mode to show changes without applying
 - **Files**: `src/main.zig`
 
-### 6. Robustness
+### 5. Robustness
 **Priority: MEDIUM**
 - Proper exit codes for different error conditions
 - Memory usage optimization for large files
@@ -56,14 +51,14 @@ This file tracks improvements needed for the gd-pretty GDScript formatter.
 
 ## Long-term Enhancements
 
-### 7. Development Integration
+### 6. Development Integration
 **Priority: LOW**
 - Language Server Protocol support
 - Editor plugin examples and documentation
 - Git pre-commit hook integration guide
 - **Files**: New files, documentation
 
-### 8. Distribution
+### 7. Distribution
 **Priority: LOW**
 - Binary releases via GitHub Actions
 - Package manager integration (Homebrew, etc.)
@@ -115,10 +110,9 @@ const node = parent.child(i) orelse return error.MalformedAST;
 
 ## Priority Order for Implementation
 
-1. **Basic error handling** - Replace panics with proper error returns  
-2. **Implement proper formatting** - Improve stub methods to add proper formatting rules
-3. **Configuration system** - Allow user customization
-4. **File handling improvements** - Better workflow integration
-5. **Long-term enhancements** - Advanced features and distribution
+1. **Implement proper formatting** - Improve stub methods to add proper formatting rules
+2. **Configuration system** - Allow user customization
+3. **File handling improvements** - Better workflow integration
+4. **Long-term enhancements** - Advanced features and distribution
 
 For completed items, see CHANGELOG.md

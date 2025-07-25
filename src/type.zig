@@ -7,9 +7,11 @@ const enums = @import("enums.zig");
 const NodeType = enums.GdNodeType;
 const assert = std.debug.assert;
 
-pub fn writeType(node: TSNode, writer: anytype, context: Context) !void {
+pub const Error = error{MissingRequiredChild} || @TypeOf(@as(std.io.AnyWriter, undefined)).Error;
+
+pub fn writeType(node: TSNode, writer: anytype, context: Context) Error!void {
     for (0..node.childCount()) |i| {
-        const child = node.child(@intCast(i)) orelse unreachable;
+        const child = node.child(@intCast(i)) orelse return Error.MissingRequiredChild;
         const child_type = (try child.getTypeAsEnum(NodeType)).?;
 
         switch (child_type) {
@@ -19,11 +21,11 @@ pub fn writeType(node: TSNode, writer: anytype, context: Context) !void {
     }
 }
 
-pub fn writeSubscript(node: TSNode, writer: anytype, context: Context) !void {
+pub fn writeSubscript(node: TSNode, writer: anytype, context: Context) Error!void {
     _ = context;
 
     for (0..node.childCount()) |i| {
-        const child = node.child(@intCast(i)) orelse unreachable;
+        const child = node.child(@intCast(i)) orelse return Error.MissingRequiredChild;
         try writer.writeAll(formatter.trimWhitespace(child.text()));
     }
 }
