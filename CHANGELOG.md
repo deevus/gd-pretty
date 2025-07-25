@@ -2,7 +2,7 @@
 
 This file tracks completed improvements and changes to the gd-pretty GDScript formatter.
 
-## [Unreleased] - July 25, 2025
+## [0.0.2] - July 25, 2025
 
 ### Fixed
 - **🚨 CRITICAL: Replace Panic-Driven Error Handling** - Replaced 27 instances of `@panic` and `unreachable` with proper error handling

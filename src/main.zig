@@ -11,7 +11,7 @@ const formatter = @import("formatter.zig");
 const GdNodeType = enums.GdNodeType;
 
 // Version should match build.zig.zon - CI will verify they're in sync
-const version = "0.0.1";
+const version = "0.0.2";
 
 var config = struct {
     files: []const []const u8 = &.{},
