@@ -5,10 +5,12 @@ pub const Error = error{
     UnexpectedNodeType,
     MissingRequiredChild,
     InvalidNodeStructure,
-    NoSpaceLeft,
+    MaxWidthExceeded,
 } || Writer.Error;
 
-out: *Writer,
+writer: *Writer,
+bytes_written: u64 = 0,
+current_line_start: u64 = 0,
 context: Context,
 
 const Options = struct {
@@ -18,7 +20,9 @@ const Options = struct {
 
 pub fn init(options: Options) GdWriter {
     return GdWriter{
-        .out = options.writer,
+        .writer = options.writer,
+        .bytes_written = 0,
+        .current_line_start = 0,
         .context = options.context orelse .{},
     };
 }
@@ -34,14 +38,35 @@ fn writeIndent(self: *GdWriter, options: IndentOptions) Error!void {
     }
 
     if (options.new_line) {
-        try self.out.writeAll("\n");
+        try self.writeNewline();
     }
 
-    try formatter.writeIndent(self.out, self.context);
+    try formatter.writeIndent(self.writer, self.context);
+}
+
+fn getCurrentLineWidth(self: *GdWriter) u32 {
+    return @intCast(self.bytes_written - self.current_line_start);
+}
+
+fn writeNewline(self: *GdWriter) !void {
+    const bytes = try self.writer.write("\n");
+    self.bytes_written += bytes;
+    self.current_line_start = self.bytes_written;
 }
 
 fn writeTrimmed(self: *GdWriter, node: Node) !void {
-    try self.out.writeAll(formatter.trimWhitespace(node.text()));
+    const text = formatter.trimWhitespace(node.text());
+    try self.write(text, .{});
+}
+
+const WriteOptions = struct {
+    check_max_width: bool = true,
+};
+
+fn write(self: *GdWriter, text: []const u8, options: WriteOptions) Error!void {
+    _ = options; // autofix
+    const bytes = try self.writer.write(text);
+    self.bytes_written += bytes;
 }
 
 pub fn writeAttribute(self: *GdWriter, node: Node) Error!void {
@@ -56,11 +81,11 @@ pub fn writeAttribute(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeSubscript(self: *GdWriter, node: Node) Error!void {
-    try @"type".writeSubscript(node, self.out, self.context);
+    try @"type".writeSubscript(node, self.writer, self.context);
 }
 
 pub fn writeType(self: *GdWriter, node: Node) Error!void {
-    try @"type".writeType(node, self.out, self.context);
+    try @"type".writeType(node, self.writer, self.context);
 }
 
 pub fn writeIdentifier(self: *GdWriter, node: Node) Error!void {
@@ -82,7 +107,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
         assert(class_node.getTypeAsEnum(NodeType) == .class);
 
         try self.writeTrimmed(class_node);
-        try self.out.writeAll(" ");
+        try self.write(" ", .{});
         i += 1;
     }
 
@@ -99,7 +124,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
     {
         const extends_node = node.child(i).?;
         if (extends_node.getTypeAsEnum(NodeType) == .extends_statement) {
-            try self.out.writeAll(" ");
+            try self.write(" ", .{});
             try self.writeExtendsStatement(extends_node);
             i += 1;
         }
@@ -111,7 +136,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
         assert(colon_node.getTypeAsEnum(NodeType) == .@":");
 
         try self.writeTrimmed(colon_node);
-        try self.out.writeAll("\n");
+        try self.writeNewline();
         i += 1;
     }
 
@@ -129,13 +154,13 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
 pub fn writeBody(self: *GdWriter, node: Node) Error!void {
     assert(node.getTypeAsEnum(NodeType) == .body);
     var cursor = node.child(0).?.cursor();
-    try formatter.depthFirstWalk(&cursor, self.out, self.context);
+    try formatter.depthFirstWalk(&cursor, self.writer, self.context);
 }
 
 pub fn writePassStatement(self: *GdWriter, node: Node) Error!void {
     assert(node.getTypeAsEnum(NodeType) == .pass_statement);
 
-    try self.out.writeAll("pass\n");
+    try self.write("pass\n", .{});
 }
 
 pub fn writeSignalStatement(self: *GdWriter, node: Node) Error!void {
@@ -149,7 +174,7 @@ pub fn writeSignalStatement(self: *GdWriter, node: Node) Error!void {
         assert(signal_node.getTypeAsEnum(NodeType) == .signal);
 
         try self.writeTrimmed(signal_node);
-        try self.out.writeAll(" ");
+        try self.write(" ", .{});
 
         i += 1;
     }
@@ -173,13 +198,13 @@ pub fn writeSignalStatement(self: *GdWriter, node: Node) Error!void {
         }
     }
 
-    try self.out.writeAll("\n");
+    try self.writeNewline();
 }
 
 pub fn writeParameters(self: *GdWriter, node: Node) Error!void {
     assert(node.getTypeAsEnum(NodeType) == .parameters);
 
-    try self.out.writeAll("(");
+    try self.write("(", .{});
     for (0..node.childCount()) |j| {
         const param = node.child(@intCast(j)) orelse return Error.MissingRequiredChild;
         const param_type = (param.getTypeAsEnum(NodeType)).?;
@@ -187,23 +212,23 @@ pub fn writeParameters(self: *GdWriter, node: Node) Error!void {
         const param_text = formatter.trimWhitespace(param.text());
         switch (param_type) {
             .typed_parameter => {
-                try self.out.writeAll(param_text);
+                try self.write(param_text, .{});
             },
-            .@"," => try self.out.writeAll(", "),
-            .identifier => try self.out.writeAll(param_text),
+            .@"," => try self.write(", ", .{}),
+            .identifier => try self.write(param_text, .{}),
             .@"(", .@")" => continue,
             else => std.debug.print("unknown param type: {} {s}\n", .{ param_type, param.text() }),
         }
     }
-    try self.out.writeAll(")");
+    try self.write(")", .{});
 }
 
 pub fn writeExtendsStatement(self: *GdWriter, node: Node) Error!void {
     assert(node.childCount() == 2);
 
     // extends
-    try self.out.writeAll("extends ");
-    try self.out.print("{s}", .{formatter.trimWhitespace(node.child(1).?.text())});
+    try self.write("extends ", .{});
+    try self.write(formatter.trimWhitespace(node.child(1).?.text()), .{});
 }
 
 pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
@@ -231,17 +256,44 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
                     };
 
                     if (next_child_is_type) {
-                        try self.out.writeAll(c.text());
+                        try self.write(c.text(), .{});
                     } else {
-                        try self.out.print("{s} ", .{c.text()});
+                        try self.write(c.text(), .{});
+                        try self.write(" ", .{});
                     }
                 },
-                else => try self.out.print("{s} ", .{c.text()}),
+                .@"var" => {
+                    try self.write("var ", .{});
+                },
+                .@"=" => {
+                    try self.write("= ", .{});
+                },
+                .binary_operator => {
+                    // Process binary expressions properly
+                    var cursor = c.cursor();
+                    try formatter.depthFirstWalk(&cursor, self.writer, self.context);
+                },
+                else => {
+                    // For expressions and other complex nodes, traverse them properly
+                    const node_text = c.text();
+                    // Check if this might be an expression
+                    if (std.mem.indexOf(u8, node_text, "+") != null or
+                        std.mem.indexOf(u8, node_text, "-") != null or
+                        std.mem.indexOf(u8, node_text, "*") != null or
+                        std.mem.indexOf(u8, node_text, "/") != null)
+                    {
+                        var cursor = c.cursor();
+                        try formatter.depthFirstWalk(&cursor, self.writer, self.context);
+                    } else {
+                        try self.write(c.text(), .{});
+                        try self.write(" ", .{});
+                    }
+                },
             }
         }
     }
 
-    _ = try self.out.write("\n");
+    try self.writeNewline();
 }
 
 pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
@@ -251,7 +303,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     {
         const func_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(func_node.getTypeAsEnum(NodeType) == .func);
-        try self.out.writeAll("func");
+        try self.write("func", .{});
     }
     i += 1;
 
@@ -259,8 +311,8 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     {
         if (node.child(i).?.getTypeAsEnum(NodeType) == .name) {
             const text = formatter.trimWhitespace(node.child(i).?.text());
-            try self.out.writeAll(" ");
-            try self.out.writeAll(text);
+            try self.write(" ", .{});
+            try self.write(text, .{});
             i += 1;
         }
     }
@@ -270,7 +322,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
         const params_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(params_node.getTypeAsEnum(NodeType) == .parameters);
 
-        try self.out.writeAll("(");
+        try self.write("(", .{});
         for (0..params_node.childCount()) |j| {
             const param = params_node.child(@intCast(j)) orelse return Error.MissingRequiredChild;
             const param_type = (param.getTypeAsEnum(NodeType)).?;
@@ -278,15 +330,15 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
             const param_text = formatter.trimWhitespace(param.text());
             switch (param_type) {
                 .typed_parameter => {
-                    try self.out.writeAll(param_text);
+                    try self.write(param_text, .{});
                 },
-                .@"," => try self.out.writeAll(", "),
-                .identifier => try self.out.writeAll(param_text),
+                .@"," => try self.write(", ", .{}),
+                .identifier => try self.write(param_text, .{}),
                 .@"(", .@")" => continue,
                 else => std.debug.print("unknown param type: {} {s}\n", .{ param_type, param.text() }),
             }
         }
-        try self.out.writeAll(")");
+        try self.write(")", .{});
     }
     i += 1;
 
@@ -302,8 +354,8 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
             assert(type_node.getTypeAsEnum(NodeType) == .type);
             i += 1;
 
-            try self.out.writeAll(" -> ");
-            try @"type".writeType(type_node, self.out, self.context);
+            try self.write(" -> ", .{});
+            try @"type".writeType(type_node, self.writer, self.context);
         }
     }
 
@@ -311,7 +363,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     {
         const colon_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(colon_node.getTypeAsEnum(NodeType) == .@":");
-        try self.out.writeAll(":\n");
+        try self.write(":\n", .{});
     }
     i += 1;
 
@@ -321,31 +373,31 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
         assert(body_node.getTypeAsEnum(NodeType) == .body);
 
         var body_cursor = body_node.child(0).?.cursor();
-        try formatter.depthFirstWalk(&body_cursor, self.out, self.context.indent());
+        try formatter.depthFirstWalk(&body_cursor, self.writer, self.context.indent());
     }
 }
 
 pub fn writeReturnStatement(self: *GdWriter, node: Node) Error!void {
     const return_node = node.child(0) orelse return Error.MissingRequiredChild;
     assert(return_node.getTypeAsEnum(NodeType) == .@"return");
-    try self.out.writeAll("return ");
+    try self.write("return ", .{});
 
     var next_node = node.child(1) orelse return;
 
     var cursor = next_node.cursor();
-    try formatter.depthFirstWalk(&cursor, self.out, self.context);
+    try formatter.depthFirstWalk(&cursor, self.writer, self.context);
 }
 
 pub fn writeClassNameStatement(self: *GdWriter, node: Node) Error!void {
     const class_name_node = node.child(0) orelse return Error.MissingRequiredChild;
     assert(class_name_node.getTypeAsEnum(NodeType) == .class_name);
     try self.writeTrimmed(class_name_node);
-    try self.out.writeAll(" ");
+    try self.write(" ", .{});
 
     const name_node = node.child(1) orelse return Error.MissingRequiredChild;
     assert(name_node.getTypeAsEnum(NodeType) == .name);
     try self.writeTrimmed(name_node);
-    try self.out.writeAll("\n");
+    try self.writeNewline();
 }
 
 // ============================================================================
@@ -354,8 +406,16 @@ pub fn writeClassNameStatement(self: *GdWriter, node: Node) Error!void {
 
 // Critical Language Features
 pub fn writeSource(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement source node handling (root of the AST)
-    try self.writeTrimmed(node);
+    // Source node is the root - need to traverse its children
+    var i: u32 = 0;
+    while (i < node.childCount()) : (i += 1) {
+        if (i > 0) {
+            try self.writeNewline();
+        }
+        const child = node.child(i).?;
+        var cursor = child.cursor();
+        try formatter.depthFirstWalk(&cursor, self.writer, self.context);
+    }
 }
 
 pub fn writeConstStatement(self: *GdWriter, node: Node) Error!void {
@@ -481,8 +541,70 @@ pub fn writeFalse(self: *GdWriter, node: Node) Error!void {
 
 // Expressions and Operations
 pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement binary operations with proper spacing
-    try self.writeTrimmed(node);
+    // Binary expressions have structure: left_expr operator right_expr
+    assert(node.childCount() == 3);
+
+    // Try single-line format first
+    self.writeBinaryOperatorNormal(node) catch |err| switch (err) {
+        Error.MaxWidthExceeded => {
+            // Fallback to multiline format
+            return self.writeBinaryOperatorMultiline(node);
+        },
+        else => return err,
+    };
+}
+
+fn writeBinaryOperatorNormal(self: *GdWriter, node: Node) Error!void {
+    const left = node.child(0).?;
+    const op = node.child(1).?;
+    const right = node.child(2).?;
+
+    // Check total width that would be consumed by this entire binary expression
+    const full_text = node.text();
+    const current_width = self.getCurrentLineWidth();
+
+    // If the entire expression would exceed the limit, trigger multiline mode
+    if (current_width + full_text.len > self.context.max_width) {
+        // Triggering multiline format due to width exceeded
+        return Error.MaxWidthExceeded;
+    }
+
+    // Use unchecked writes since we've already verified the total width
+    // Write left operand
+    var cursor = left.cursor();
+    try formatter.depthFirstWalk(&cursor, self.writer, self.context);
+
+    // Write operator with spaces
+    try self.write(" ", .{});
+    try self.write(op.text(), .{});
+    try self.write(" ", .{});
+
+    // Write right operand
+    cursor = right.cursor();
+    try formatter.depthFirstWalk(&cursor, self.writer, self.context);
+}
+
+fn writeBinaryOperatorMultiline(self: *GdWriter, node: Node) !void {
+    const left = node.child(0).?;
+    const op = node.child(1).?;
+    const right = node.child(2).?;
+
+    // Write left operand
+    var cursor = left.cursor();
+    try formatter.depthFirstWalk(&cursor, self.writer, self.context);
+
+    // Write operator without trailing space
+    try self.write(" ", .{});
+    try self.write(op.text(), .{});
+
+    // Newline and indented right operand
+    try self.writeNewline();
+    try self.writeIndent(.{ .new_line = false });
+    try self.writeIndent(.{ .new_line = false }); // Double indent for continuation
+
+    // Write right operand
+    cursor = right.cursor();
+    try formatter.depthFirstWalk(&cursor, self.writer, self.context);
 }
 
 pub fn writeComparisonOperator(self: *GdWriter, node: Node) Error!void {
@@ -751,7 +873,7 @@ pub fn writeColonEquals(self: *GdWriter, node: Node) Error!void {
 
 const std = @import("std");
 const assert = std.debug.assert;
-const Writer = std.io.Writer;
+const Writer = std.Io.Writer;
 
 const tree_sitter = @import("tree-sitter");
 const Node = tree_sitter.TSNode;
@@ -763,3 +885,4 @@ const formatter = @import("formatter.zig");
 const attribute = @import("attribute.zig");
 const @"type" = @import("type.zig");
 const Context = @import("Context.zig");
+

@@ -53,6 +53,8 @@ pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, writer: *Writer, context: Contex
         var handled = false;
         const tag_name = @tagName(nt);
 
+        // Debug output removed - no longer needed
+
         if (node_type_map.get(tag_name)) |handler| if (handler.exists) {
             var gd_writer = GdWriter.init(.{
                 .writer = writer,
@@ -75,7 +77,7 @@ pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, writer: *Writer, context: Contex
 }
 
 pub fn trimWhitespace(text: []const u8) []const u8 {
-    return std.mem.trim(u8, text, &[_]u8{ ' ', '\t', '\r', '\n' });
+    return std.mem.trim(u8, text, &std.ascii.whitespace);
 }
 
 pub fn printTree(root: ts.TSNode, writer: anytype) !void {
@@ -96,7 +98,7 @@ fn printTreeRecursive(root: ts.TSNode, writer: anytype, depth: usize) !void {
 }
 
 const std = @import("std");
-const Writer = std.io.Writer;
+const Writer = std.Io.Writer;
 
 const ts = @import("tree-sitter");
 const case = @import("case");

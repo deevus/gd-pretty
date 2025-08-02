@@ -1,1 +1,3 @@
-class_name Foo extends Node
+class_name Foo
+
+extends Node
