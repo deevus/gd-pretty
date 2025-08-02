@@ -53,8 +53,6 @@ pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, writer: *Writer, context: Contex
         var handled = false;
         const tag_name = @tagName(nt);
 
-        // Debug output removed - no longer needed
-
         if (node_type_map.get(tag_name)) |handler| if (handler.exists) {
             var gd_writer = GdWriter.init(.{
                 .writer = writer,
