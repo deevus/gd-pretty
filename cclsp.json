@@ -1,0 +1,9 @@
+{
+    "servers": [
+        {
+            "extensions": ["zig", "zon"],
+            "command": ["zls"],
+            "rootDir": "."
+        }
+    ]
+}

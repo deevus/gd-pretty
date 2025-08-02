@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "cclsp": {
+      "command": "bunx",
+      "args": ["-y", "cclsp"],
+      "env": {
+        "CCLSP_CONFIG_PATH": "cclsp.json"
+      }
+    }
+  }
+}
