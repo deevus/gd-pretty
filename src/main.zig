@@ -7,6 +7,12 @@ const TSParser = ts.TSParser;
 const Context = @import("Context.zig");
 const enums = @import("enums.zig");
 const formatter = @import("formatter.zig");
+const logging = @import("logging.zig");
+
+// Override std.log with our custom logging function
+pub const std_options: std.Options = .{
+    .logFn = logging.logFn,
+};
 
 const GdNodeType = enums.GdNodeType;
 
@@ -16,6 +22,7 @@ const version = "0.0.2";
 var config = struct {
     files: []const []const u8 = &.{},
     version: bool = false,
+    log_file: ?[]const u8 = null,
     allocator: std.mem.Allocator = undefined,
 }{};
 
@@ -47,6 +54,11 @@ pub fn main() !void {
                     .help = "show version information",
                     .value_ref = r.mkRef(&config.version),
                 },
+                .{
+                    .long_name = "log-file",
+                    .help = "path to debug log file (enables debug logging)",
+                    .value_ref = r.mkRef(&config.log_file),
+                },
             }),
             .target = cli.CommandTarget{
                 .action = cli.CommandAction{ .positional_args = cli.PositionalArgs{
@@ -67,11 +79,18 @@ pub fn main() !void {
 }
 
 fn formatFiles() !void {
+    // Initialize logging system
+    try logging.init(config.log_file, config.allocator);
+    defer logging.deinit();
+    
     if (config.version) {
         const stdout = std.io.getStdOut().writer();
         try stdout.print("gd-pretty {s}\n", .{version});
         return;
     }
+    
+    std.log.info("gd-pretty {s} starting", .{version});
+    std.log.debug("Processing {} files", .{config.files.len});
 
     // Handle positional arguments - zig-cli should populate config.files
     if (config.files.len == 0) {

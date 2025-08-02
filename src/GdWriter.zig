@@ -8,6 +8,9 @@ const attribute = @import("attribute.zig");
 const @"type" = @import("type.zig");
 const Context = @import("Context.zig");
 
+// Scoped logger for GdWriter
+const log = std.log.scoped(.gdwriter);
+
 const GdWriter = @This();
 const Node = tree_sitter.TSNode;
 const NodeType = enums.GdNodeType;
@@ -227,7 +230,7 @@ pub fn writeParameters(self: *GdWriter, node: Node) Error!void {
             .@"," => try self.write(", ", .{}),
             .identifier => try self.write(param_text, .{}),
             .@"(", .@")" => continue,
-            else => std.debug.print("unknown param type: {} {s}\n", .{ param_type, param.text() }),
+            else => log.warn("unknown param type: {} {s}", .{ param_type, param.text() }),
         }
     }
     try self.write(")", .{});
@@ -345,7 +348,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
                 .@"," => try self.write(", ", .{}),
                 .identifier => try self.write(param_text, .{}),
                 .@"(", .@")" => continue,
-                else => std.debug.print("unknown param type: {} {s}\n", .{ param_type, param.text() }),
+                else => log.warn("unknown param type: {} {s}", .{ param_type, param.text() }),
             }
         }
         try self.write(")", .{});
