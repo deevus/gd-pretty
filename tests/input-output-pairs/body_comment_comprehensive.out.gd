@@ -35,9 +35,7 @@ func unicode_test():
 
 func multiple_comments():
     # First comment
-
     # Second comment
-
     # Third comment
 
     var result = 42 
@@ -55,9 +53,7 @@ func empty_comments():
 
 func mixed_comments():
     var start = 0  # inline comment
-
     # standalone comment
 
     var end = 100  # another inline comment
-
     # final standalone comment

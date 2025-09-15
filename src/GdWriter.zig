@@ -120,6 +120,15 @@ fn isInlineComment(comment_node: Node) bool {
     return false;
 }
 
+// Check if there were blank lines in the original source between two nodes
+fn hasBlankLinesBetween(node1: Node, node2: Node) bool {
+    const end_point = node1.endPoint();
+    const start_point = node2.startPoint();
+
+    // If there's more than one line difference, there must be blank lines
+    return (start_point.row - end_point.row) > 1;
+}
+
 pub fn writeAttribute(self: *GdWriter, node: Node) Error!void {
     var i: u32 = 0;
 
@@ -248,7 +257,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
                 else => {
                     log.err("Expected body or comment after class declaration, got {s}", .{child.getTypeAsString()});
                     return Error.UnexpectedNodeType;
-                }
+                },
             }
         }
 
@@ -274,9 +283,21 @@ pub fn writeBody(self: *GdWriter, node: Node) Error!void {
                     try self.handleComment(child);
                     try self.writeNewline();
                 } else {
-                    // Standalone comment
+                    // Standalone comment - handleComment already writes the newline
+                    // Check if we need to preserve blank lines from the original source
                     if (i > 0) {
-                        try self.writeNewline();
+                        const prev_child = node.child(@intCast(i - 1)).?;
+
+                        // Check if there were blank lines in the original source
+                        if (hasBlankLinesBetween(prev_child, child)) {
+                            // Preserve the blank line from the original
+                            try self.writeNewline();
+                        } else if (prev_child.getTypeAsEnum(NodeType) != .comment) {
+                            // Only add a newline before if the previous child was not a comment
+                            // This handles the case where we're after a non-comment statement
+                            try self.writeNewline();
+                        }
+                        // If prev was a comment and no blank lines in original, don't add extra newline
                     }
                     try self.handleComment(child);
                 }
@@ -294,7 +315,8 @@ pub fn writeBody(self: *GdWriter, node: Node) Error!void {
                 const next_child = if (i + 1 < node.childCount()) node.child(@intCast(i + 1)) else null;
                 const has_inline_comment = if (next_child) |nc|
                     nc.getTypeAsEnum(NodeType) == .comment and isInlineComment(nc)
-                else false;
+                else
+                    false;
 
                 // Process the statement
                 var cursor = child.cursor();
@@ -662,7 +684,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
                 else => {
                     log.err("Expected body or comment after function signature, got {s}", .{child.getTypeAsString()});
                     return Error.UnexpectedNodeType;
-                }
+                },
             }
         }
 

@@ -80,5 +80,4 @@ func foo():
 		0						# inline h
 		# i
 	] ; pass # inline i
-
     # j

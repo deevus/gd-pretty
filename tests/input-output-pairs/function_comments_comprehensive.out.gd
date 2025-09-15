@@ -28,7 +28,6 @@ func special(): # Unicode: 你好, symbols: @#$%^&*(), code: `print("hello")`
 
 func multiple():
     # first comment
-
     # second comment
 
     pass

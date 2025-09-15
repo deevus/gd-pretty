@@ -36,11 +36,9 @@ class Foo:
     # j
 
     @onready var d  # inline e
-
     # k
 
     @onready # inline f
-
     # l
 
     var e 
