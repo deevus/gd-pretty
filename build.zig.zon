@@ -2,7 +2,7 @@
     .name = .gd_pretty,
     .fingerprint = 0xea8dc3652d2179b4,
     .version = "0.0.2",
-    .minimum_zig_version = "0.14.1",
+    .minimum_zig_version = "0.15.1",
     .dependencies = .{
         .tree_sitter = .{
             .url = "git+https://github.com/tree-sitter/tree-sitter#3d26b8e50027198158c66755b646e2dd15d3860e",
