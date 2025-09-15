@@ -1,22 +1,23 @@
 ---
-description: Review an existing issue specification using technical product management expertise
+description: Review an existing GitHub issue using technical product management expertise
 argument-hint: [issue-number]
 ---
 
 # Issue Review Command
 
 ## Parameters
-- `issue-number`: The number of the existing issue to review (e.g., 001, 002)
+- `issue-number`: The GitHub issue number to review (e.g., 1, 2, 3)
 
 ## Behavior
 
-1. **Locate Issue**
-   - Find the issue directory at `work/issues/{issue-number}-*/`
-   - If not found, show error and list available issues
+1. **Fetch GitHub Issue**
+   - Retrieves the issue from the GitHub repository
+   - Loads issue title, description, labels, and comments
+   - Validates that the issue exists and is accessible
 
 2. **Technical Product Manager Review**
-   - Uses `@agent-technical-product-manager` for expert analysis
-   - Reviews the issue specification for completeness and clarity
+   - Uses `technical-product-manager` agent for expert analysis
+   - Reviews the GitHub issue specification for completeness and clarity
    - Evaluates technical feasibility and implementation approach
    - Assesses acceptance criteria and definition of done
 
@@ -29,10 +30,11 @@ argument-hint: [issue-number]
    - **Testing Strategy**: Is the validation approach adequate?
 
 4. **Review Output**
-   - Creates or updates `work/issues/{issue-number}-*/review.md`
+   - Posts comprehensive review feedback as a GitHub issue comment
    - Provides structured feedback and recommendations
    - Identifies gaps, risks, and improvement opportunities
    - Suggests refinements to the issue specification
+   - Updates issue labels based on review outcome
 
 ## Technical Product Manager Analysis
 
@@ -91,17 +93,29 @@ The generated `review.md` will include:
 
 ## Example Usage
 ```
-issue:review 001
+issue:review 3
 ```
 
 This will:
-- Locate `work/issues/001-fix-incorrect-indentation-after-match-expressions/`
+- Fetch GitHub issue #3 from the repository
 - Engage technical product manager agent for comprehensive review
-- Generate `work/issues/001-fix-incorrect-indentation-after-match-expressions/review.md`
-- Provide actionable feedback and recommendations
+- Post detailed review feedback as a comment on the GitHub issue
+- Update issue labels based on review outcome (e.g., "needs-clarification", "ready-for-implementation")
+
+## GitHub Integration
+- **Issue Comments**: Review feedback posted directly to GitHub issue
+- **Label Management**: Issues are tagged based on review outcome
+- **Team Collaboration**: Review is visible to all team members
+- **History Tracking**: Complete review history preserved in issue comments
 
 ## Agent Integration
-- Always uses `@agent-technical-product-manager` for expert analysis
+- Always uses `technical-product-manager` agent for expert analysis
 - Leverages product management expertise for holistic issue evaluation
 - Provides professional-grade specification review and recommendations
 - Ensures issues are implementation-ready before development begins
+
+## Benefits
+- **GitHub Native**: All review feedback integrated with GitHub's issue system
+- **Transparency**: Review process visible to entire team
+- **Actionable Feedback**: Specific recommendations for issue improvement
+- **Quality Assurance**: Professional review before implementation begins
