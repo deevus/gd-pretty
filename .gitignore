@@ -1,3 +1,5 @@
 zig-out
 .zig-cache
 .claude/
+debug.log
+debug_failing.log
