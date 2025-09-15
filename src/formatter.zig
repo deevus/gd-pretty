@@ -106,7 +106,7 @@ pub fn normalizeIndentation(text: []const u8, context: Context, allocator: std.m
 
     for (text) |char| {
         if (char == '\t') {
-            @memcpy(result[write_idx..write_idx + spaces_per_tab], context.indent_str);
+            @memcpy(result[write_idx .. write_idx + spaces_per_tab], context.indent_str);
             write_idx += spaces_per_tab;
         } else {
             result[write_idx] = char;
