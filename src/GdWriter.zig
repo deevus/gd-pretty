@@ -92,14 +92,12 @@ fn isInlineComment(comment_node: Node) bool {
     // For now, we'll use a simple heuristic: if there's a previous sibling on the same line
 
     const comment_start = comment_node.startPoint();
-    std.debug.print("DEBUG: isInlineComment: comment at row={}, col={}, text='{s}'\n", .{ comment_start.row, comment_start.column, comment_node.text()[0..@min(20, comment_node.text().len)] });
 
     // Look for a previous sibling that's not whitespace
     var prev_sibling = comment_node.prevSibling();
     while (prev_sibling) |sibling| {
         const sibling_type = sibling.getTypeAsString();
         const sibling_end = sibling.endPoint();
-        std.debug.print("DEBUG: isInlineComment: checking prev sibling type='{s}', end at row={}, col={}\n", .{ sibling_type, sibling_end.row, sibling_end.column });
 
         // Skip whitespace-only nodes
         if (std.mem.eql(u8, sibling_type, "whitespace") or
@@ -113,11 +111,9 @@ fn isInlineComment(comment_node: Node) bool {
         // If the previous non-whitespace sibling ends on the same line as the comment starts,
         // then this is an inline comment
         if (sibling_end.row == comment_start.row) {
-            std.debug.print("DEBUG: isInlineComment: INLINE - sibling ends on same row\n", .{});
             return true;
         }
 
-        std.debug.print("DEBUG: isInlineComment: NOT INLINE - different rows\n", .{});
         break;
     }
 
@@ -273,13 +269,11 @@ pub fn writeBody(self: *GdWriter, node: Node) Error!void {
             if (child.getTypeAsEnum(NodeType) == .comment) {
                 // Check if this is an inline comment (on same line as previous statement)
                 if (isInlineComment(child)) {
-                    std.debug.print("DEBUG: writeBody: handling inline comment\n", .{});
                     // Handle inline comment - it should appear on the same line as the previous statement
                     // The previous statement should have NOT written a newline
                     try self.handleComment(child);
                     try self.writeNewline();
                 } else {
-                    std.debug.print("DEBUG: writeBody: handling standalone comment\n", .{});
                     // Standalone comment
                     if (i > 0) {
                         try self.writeNewline();
@@ -446,13 +440,10 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
         if (child) |c| {
             // Check if this is a comment
             if (c.getTypeAsEnum(NodeType) == .comment) {
-                std.debug.print("DEBUG: writeVariableStatement: found comment '{s}'\n", .{c.text()[0..@min(20, c.text().len)]});
                 if (isInlineComment(c)) {
-                    std.debug.print("DEBUG: writeVariableStatement: handling inline comment\n", .{});
                     try self.handleComment(c);
                     has_inline_comment = true;
                 } else {
-                    std.debug.print("DEBUG: writeVariableStatement: handling standalone comment\n", .{});
                     // Standalone comment - should not happen within a variable statement
                     try self.handleComment(c);
                 }
