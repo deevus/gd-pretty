@@ -115,6 +115,7 @@ fn formatFiles() !void {
         formatter.depthFirstWalk(&cursor, writer, .{}) catch |err| {
             try printErrorAndExit("Error: failed to format file '{s}': {}\n", .{ path, err });
         };
+        try writer.flush();
     }
 }
 
