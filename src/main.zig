@@ -104,14 +104,7 @@ fn formatFiles() !void {
         };
         defer file.close();
 
-        var file_reader = file.reader(&buf);
-        var r = &file_reader.interface;
-
-        const file_contents = r.allocRemaining(arena_allocator, .unlimited) catch |err| {
-            try printErrorAndExit("Error: failed to read file '{s}': {}\n", .{ path, err });
-        };
-
-        var tree = ts_parser.parseString(file_contents) catch |err| {
+        var tree = ts_parser.parseFile(arena_allocator, file) catch |err| {
             try printErrorAndExit("Error: failed to parse file '{s}': {}\n", .{ path, err });
         };
         defer tree.deinit();
