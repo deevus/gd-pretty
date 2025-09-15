@@ -1,5 +1,5 @@
 var log_file: ?File = null;
-var log_writer: ?*Writer = null;
+var log_file_writer: ?File.Writer = null;
 var allocator: Allocator = undefined;
 
 var log_buf: [256]u8 = undefined;
@@ -12,7 +12,9 @@ pub fn logFn(
     args: anytype,
 ) void {
     // Only log if we have a writer (i.e., --log-file was provided)
-    const writer = log_writer orelse return;
+    if (log_file_writer == null) return;
+
+    const writer = &log_file_writer.?.interface;
 
     // Format: [LEVEL] scope: message
     const level_txt = switch (level) {
@@ -28,19 +30,22 @@ pub fn logFn(
     writer.flush() catch return;
 }
 
+pub const LoggingOptions = struct {
+    truncate: bool = false,
+};
+
 /// Initialize logging system based on CLI options
-pub fn init(log_file_path: ?[]const u8, alloc: Allocator) !void {
+pub fn init(alloc: Allocator, log_file_path: ?[]const u8, options: LoggingOptions) !void {
     allocator = alloc;
 
     if (log_file_path) |path| {
         // Create or truncate the log file
-        log_file = std.fs.cwd().createFile(path, .{}) catch |err| {
+        log_file = std.fs.cwd().createFile(path, .{ .truncate = options.truncate }) catch |err| {
             try printError("Warning: Could not create log file '{s}': {}\nDebug logging will be disabled.\n", .{ path, err });
             return;
         };
 
-        var log_file_writer = log_file.?.writer(&log_buf);
-        log_writer = &log_file_writer.interface;
+        log_file_writer = log_file.?.writer(&log_buf);
 
         std.log.info("Debug logging initialized: {s}", .{path});
     }
@@ -53,7 +58,6 @@ pub fn deinit() void {
         std.log.info("Debug logging session ended", .{});
         file.close();
         log_file = null;
-        log_writer = null;
     }
 }
 

@@ -28,6 +28,7 @@ pub const GdNodeType = enum {
     typed_parameter,
     parameters,
     name,
+    static_keyword,
     func,
     conditional_expression,
     pattern_section,

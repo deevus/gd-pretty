@@ -1,7 +1,8 @@
-var x= [
+var x = [
 	# TODO: fix indent
-	]
+	] 
+
 func foo():
-	var y=[
+    var y = [
 		# TODO: fix indent
-	]
+	] 

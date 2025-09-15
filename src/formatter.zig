@@ -1,3 +1,5 @@
+const logger = std.log.scoped(.formatter);
+
 const WriteFn = *const fn (writer: *GdWriter, node: ts.TSNode) GdWriter.Error!void;
 
 const NodeTypeMapValue = struct {
@@ -45,31 +47,28 @@ pub fn writeIndent(writer: anytype, context: Context) !void {
     }
 }
 
-pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, writer: *Writer, context: Context) GdWriter.Error!void {
+pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, gd_writer: *GdWriter) GdWriter.Error!void {
     const current_node = cursor.currentNode();
     const node_type = current_node.getTypeAsEnum(GdNodeType);
+
+    logger.debug("Node type: {s}", .{current_node.getTypeAsString()});
 
     if (node_type) |nt| {
         var handled = false;
         const tag_name = @tagName(nt);
 
         if (node_type_map.get(tag_name)) |handler| if (handler.exists) {
-            var gd_writer = GdWriter.init(.{
-                .writer = writer,
-                .context = context,
-            });
-            try handler.write_fn.?(&gd_writer, current_node);
-
+            try handler.write_fn.?(gd_writer, current_node);
             handled = true;
         };
 
         if (!handled and cursor.gotoFirstChild()) {
-            try depthFirstWalk(cursor, writer, context);
+            try depthFirstWalk(cursor, gd_writer);
             _ = cursor.gotoParent();
         }
 
         while (cursor.gotoNextSibling()) {
-            try depthFirstWalk(cursor, writer, context);
+            try depthFirstWalk(cursor, gd_writer);
         }
     }
 }

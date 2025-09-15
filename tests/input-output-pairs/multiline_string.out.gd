@@ -1,6 +1,6 @@
 class X:
-	func foo():
-		var x = """aaa
+        func foo():
+        var x = """aaa
 		bbb
 		ccc
-		"""
+		""" 

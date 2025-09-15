@@ -79,7 +79,7 @@ pub fn main() !void {
 
 fn formatFiles() !void {
     // Initialize logging system
-    try logging.init(config.log_file, config.allocator);
+    try logging.init(config.allocator, config.log_file, .{ .truncate = true });
     defer logging.deinit();
 
     if (config.version) {
@@ -131,7 +131,12 @@ fn formatFiles() !void {
         const root_node = tree.rootNode();
         var cursor = root_node.cursor();
 
-        formatter.depthFirstWalk(&cursor, writer, .{}) catch |err| {
+        var gd_writer = @import("GdWriter.zig").init(.{
+            .writer = writer,
+            .context = .{},
+        });
+
+        formatter.depthFirstWalk(&cursor, &gd_writer) catch |err| {
             try logging.printErrorAndExit("Error: failed to format file '{s}': {}\n", .{ path, err });
         };
         try writer.flush();
@@ -161,6 +166,8 @@ test "input output pairs" {
         if (entry.kind != .file) continue;
 
         if (std.mem.endsWith(u8, entry.name, ".in.gd")) {
+            std.debug.print("Processing input file: {s}\n", .{entry.name});
+
             const in_file = try dir.openFile(entry.name, .{});
             defer in_file.close();
 
@@ -176,7 +183,12 @@ test "input output pairs" {
             var tree = try ts_parser.parseFile(allocator, in_file);
             var cursor = tree.rootNode().cursor();
 
-            try formatter.depthFirstWalk(&cursor, writer, .{});
+            var gd_writer = @import("GdWriter.zig").init(.{
+                .writer = writer,
+                .context = .{},
+            });
+
+            try formatter.depthFirstWalk(&cursor, &gd_writer);
             try writer.flush();
         }
     }
