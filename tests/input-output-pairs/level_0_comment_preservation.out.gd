@@ -7,6 +7,6 @@ func foo():
 
     if true:
 # ccc
-		pass
-		# ddd
+        pass
+        # ddd
 # eee

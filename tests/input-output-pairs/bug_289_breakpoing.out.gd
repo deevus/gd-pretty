@@ -1,4 +1,4 @@
 func foo():
     
     if true:
-		breakpoint
+        breakpoint

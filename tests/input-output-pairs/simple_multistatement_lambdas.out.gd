@@ -7,10 +7,10 @@ func foo():
 
 func baz():
     var x1 = func(x):
-		var y =x+1
-		if y:
-			return 1
-		return 2
+        var y =x+1
+        if y:
+            return 1
+        return 2
 
     var x2 = func():
 		if true:

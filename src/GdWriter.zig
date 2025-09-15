@@ -9,16 +9,19 @@ pub const Error = error{
     MissingRequiredChild,
     InvalidNodeStructure,
     MaxWidthExceeded,
+    OutOfMemory,
 } || Writer.Error;
 
 writer: *Writer,
 bytes_written: u64 = 0,
 current_line_start: u64 = 0,
 context: Context,
+allocator: std.mem.Allocator,
 
 const Options = struct {
     writer: *Writer,
     context: ?Context = null,
+    allocator: std.mem.Allocator,
 };
 
 pub fn init(options: Options) GdWriter {
@@ -27,6 +30,7 @@ pub fn init(options: Options) GdWriter {
         .bytes_written = 0,
         .current_line_start = 0,
         .context = options.context orelse .{},
+        .allocator = options.allocator,
     };
 }
 
@@ -67,9 +71,13 @@ fn writeNewline(self: *GdWriter) !void {
 
 fn writeTrimmed(self: *GdWriter, node: Node) !void {
     const original_text = node.text();
-    const text = formatter.trimWhitespace(original_text);
-    log.debug("writeTrimmed: node_type={s}, original='{s}', trimmed='{s}'", .{ node.getTypeAsString(), original_text[0..@min(30, original_text.len)], text[0..@min(30, text.len)] });
-    try self.write(text, .{});
+    const trimmed_text = formatter.trimWhitespace(original_text);
+
+    // Normalize indentation (convert tabs to configured indent)
+    const normalized_text = try formatter.normalizeIndentation(trimmed_text, self.context, self.allocator);
+
+    log.debug("writeTrimmed: node_type={s}, original='{s}', normalized='{s}'", .{ node.getTypeAsString(), original_text[0..@min(30, original_text.len)], normalized_text[0..@min(30, normalized_text.len)] });
+    try self.write(normalized_text, .{});
 }
 
 const WriteOptions = struct {

@@ -39,10 +39,10 @@ func bar():
 		pass 
 
     var x2 = func() -> int:
-		return 1
+        return 1
 
     var x3 = func baz() -> int:
-		return 1
+        return 1
 
     var x5 = func():
 		1 

@@ -4,6 +4,7 @@ const cli = @import("cli");
 
 const TSParser = ts.TSParser;
 const Context = @import("Context.zig");
+const IndentConfig = @import("IndentConfig.zig");
 const enums = @import("enums.zig");
 const formatter = @import("formatter.zig");
 const logging = @import("logging.zig");
@@ -14,6 +15,7 @@ pub const std_options: std.Options = .{
 };
 
 const GdNodeType = enums.GdNodeType;
+const IndentType = enums.IndentType;
 
 // Version should match build.zig.zon - CI will verify they're in sync
 const version = "0.0.2";
@@ -22,6 +24,9 @@ var config = struct {
     files: []const []const u8 = &.{},
     version: bool = false,
     log_file: ?[]const u8 = null,
+    indent_style: ?[]const u8 = null,
+    indent_width: u32 = 4,
+    auto_detect_indent: bool = false,
     allocator: std.mem.Allocator = undefined,
 }{};
 
@@ -58,6 +63,21 @@ pub fn main() !void {
                     .help = "path to debug log file (enables debug logging)",
                     .value_ref = r.mkRef(&config.log_file),
                 },
+                .{
+                    .long_name = "indent-style",
+                    .help = "indentation style: 'tabs', 'spaces', or 'auto-detect'",
+                    .value_ref = r.mkRef(&config.indent_style),
+                },
+                .{
+                    .long_name = "indent-width",
+                    .help = "indentation width (number of spaces, default: 4)",
+                    .value_ref = r.mkRef(&config.indent_width),
+                },
+                .{
+                    .long_name = "auto-detect-indent",
+                    .help = "auto-detect indentation style from input files",
+                    .value_ref = r.mkRef(&config.auto_detect_indent),
+                },
             }),
             .target = cli.CommandTarget{
                 .action = cli.CommandAction{ .positional_args = cli.PositionalArgs{
@@ -75,6 +95,45 @@ pub fn main() !void {
     };
 
     return r.run(&app);
+}
+
+fn createIndentConfig(file_content: ?[]const u8) !IndentConfig {
+    // If auto-detect is enabled, try to detect from file content
+    if (config.auto_detect_indent) {
+        if (file_content) |content| {
+            return IndentConfig.detectFromSource(content);
+        }
+    }
+
+    // Use explicit configuration if provided
+    if (config.indent_style) |style_str| {
+        if (std.mem.eql(u8, style_str, "tabs")) {
+            return IndentConfig{
+                .style = .tabs,
+                .width = config.indent_width,
+                .auto_detect = false,
+            };
+        } else if (std.mem.eql(u8, style_str, "spaces")) {
+            return IndentConfig{
+                .style = .spaces,
+                .width = config.indent_width,
+                .auto_detect = false,
+            };
+        } else if (std.mem.eql(u8, style_str, "auto-detect")) {
+            if (file_content) |content| {
+                return IndentConfig.detectFromSource(content);
+            }
+        } else {
+            try logging.printErrorAndExit("Error: invalid indent-style '{s}'. Must be 'tabs', 'spaces', or 'auto-detect'\n", .{style_str});
+        }
+    }
+
+    // Default configuration
+    return IndentConfig{
+        .style = .spaces,
+        .width = config.indent_width,
+        .auto_detect = false,
+    };
 }
 
 fn formatFiles() !void {
@@ -123,6 +182,16 @@ fn formatFiles() !void {
         };
         defer file.close();
 
+        // Read file content for indentation detection
+        const file_content = try file.readToEndAlloc(arena_allocator, std.math.maxInt(usize));
+
+        // Create indentation configuration
+        const indent_config = try createIndentConfig(file_content);
+        const indent_string = try indent_config.generateIndentString(arena_allocator);
+
+        // Reset file position for parsing
+        try file.seekTo(0);
+
         var tree = ts_parser.parseFile(arena_allocator, file) catch |err| {
             try logging.printErrorAndExit("Error: failed to parse file '{s}': {}\n", .{ path, err });
         };
@@ -133,7 +202,12 @@ fn formatFiles() !void {
 
         var gd_writer = @import("GdWriter.zig").init(.{
             .writer = writer,
-            .context = .{},
+            .context = .{
+                .indent_str = indent_string,
+                .indent_type = indent_config.style,
+                .indent_size = indent_config.width,
+            },
+            .allocator = arena_allocator,
         });
 
         formatter.depthFirstWalk(&cursor, &gd_writer) catch |err| {
@@ -183,9 +257,22 @@ test "input output pairs" {
             var tree = try ts_parser.parseFile(allocator, in_file);
             var cursor = tree.rootNode().cursor();
 
+            // Use default indentation for tests (spaces, width 4)
+            const default_indent_config = IndentConfig{
+                .style = .spaces,
+                .width = 4,
+                .auto_detect = false,
+            };
+            const indent_string = try default_indent_config.generateIndentString(allocator);
+
             var gd_writer = @import("GdWriter.zig").init(.{
                 .writer = writer,
-                .context = .{},
+                .context = .{
+                    .indent_str = indent_string,
+                    .indent_type = default_indent_config.style,
+                    .indent_size = default_indent_config.width,
+                },
+                .allocator = allocator,
             });
 
             try formatter.depthFirstWalk(&cursor, &gd_writer);

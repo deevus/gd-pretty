@@ -4,7 +4,7 @@ class_name Aclassname
 # a
 
 @export_group( # inline a
-	"res://aaaaaaaaaaaaa/bbbbbbbbbbbbbbb/cccccccccccc/ddddddddddd/eeeeeeeeeeeeeee/ffffffffff.tres" # inline b
+    "res://aaaaaaaaaaaaa/bbbbbbbbbbbbbbb/cccccccccccc/ddddddddddd/eeeeeeeeeeeeeee/ffffffffff.tres" # inline b
 )
  # inline c
 # b
@@ -12,7 +12,7 @@ class_name Aclassname
 # c
 
 @export_enum( # inline d
-	"Aaaaaaaaaaa", "Bbbbbbbbb", "Cccccccc", "Ddddddd", "Eeeeee", "Ffffffffff", "Gggggggggg" # inline e
+    "Aaaaaaaaaaa", "Bbbbbbbbb", "Cccccccc", "Ddddddd", "Eeeeee", "Ffffffffff", "Gggggggggg" # inline e
 )
  # inline f
 # d
@@ -29,14 +29,14 @@ var a
 # g
 
 @export_enum( # inline h
-	"Aaaaaaaaaaa", # inline i
-	"Bbbbbbbbb",
-	"Cccccccc", # inline j
-	"Ddddddd",
-	"Eeeeee",
-	"Ffffffffff",
-	"Gggggggggg",
-	"Hhhhhhhhh"
+    "Aaaaaaaaaaa", # inline i
+    "Bbbbbbbbb",
+    "Cccccccc", # inline j
+    "Ddddddd",
+    "Eeeeee",
+    "Ffffffffff",
+    "Gggggggggg",
+    "Hhhhhhhhh"
 )
  # inline k
 # h

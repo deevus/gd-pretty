@@ -46,19 +46,19 @@ var p9 :							# inline f
 
 # l
 
-var p10 :						# inline i
-	# m
-	get:						# inline j
-		# n
-		var xyz = 123			# inline k
-		# o
-		return xyz				# inline l
-		# p
-	set(x):						# inline m
-		# q
-		var xyz = 234			# inline n
-		# r
-		p8 = x + 1 + xyz
+var p10 :                        # inline i
+    # m
+    get:                        # inline j
+        # n
+        var xyz = 123            # inline k
+        # o
+        return xyz                # inline l
+        # p
+    set(x):                        # inline m
+        # q
+        var xyz = 234            # inline n
+        # r
+        p8 = x + 1 + xyz
 
  # inline o
 # s

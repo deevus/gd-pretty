@@ -4,15 +4,15 @@ signal s(a, b)
 
 # export(
 
-# 	# qq2
+#     # qq2
 
-# 	int,
+#     int,
 
-# 	# ww2
+#     # ww2
 
-# 	20
+#     20
 
-# 	# ee2
+#     # ee2
 
 # ) var x
 
@@ -47,9 +47,9 @@ func bar(a, b):
     pass
 func baz():
     bar(
-		# qq5
-		1,
-		# ww5
-		2
-		# ee5
-	)
+        # qq5
+        1,
+        # ww5
+        2
+        # ee5
+    )
