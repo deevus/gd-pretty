@@ -1,53 +1,29 @@
 .{
-    // This is the default name used by packages depending on this one. For
-    // example, when a user runs `zig fetch --save <url>`, this field is used
-    // as the key in the `dependencies` table. Although the user can choose a
-    // different name, most users will stick with this provided value.
-    //
-    // It is redundant to include "zig" in this name because it is already
-    // within the Zig package namespace.
     .name = .gd_pretty,
-
     .fingerprint = 0xea8dc3652d2179b4,
-
-    // This is a [Semantic Version](https://semver.org/).
-    // In a future version of Zig it will be used for package deduplication.
     .version = "0.0.2",
-
-    // This field is optional.
-    // This is currently advisory only; Zig does not yet do anything
-    // with this value.
     .minimum_zig_version = "0.14.1",
-
-    // This field is optional.
-    // Each dependency must either provide a `url` and `hash`, or a `path`.
-    // `zig build --fetch` can be used to fetch all dependencies of a package, recursively.
-    // Once all dependencies are fetched, `zig build` no longer requires
-    // internet connectivity.
     .dependencies = .{
         .tree_sitter = .{
-            .url = "git+https://github.com/tree-sitter/tree-sitter#d4d8ed32b324a846d6bbe6078393d7b3a2975519",
-            .hash = "tree_sitter-0.26.0-Tw2sR3K4CwA_GbHqW5STjLdERuYa_LBew1nhD3WG-vSw",
+            .url = "git+https://github.com/tree-sitter/tree-sitter#3d26b8e50027198158c66755b646e2dd15d3860e",
+            .hash = "tree_sitter-0.26.0-Tw2sR-iwCwAg9xembn3a5jXkQTJ1OqwEZgmU9zNbxxcS",
         },
         .tree_sitter_gdscript = .{
-            .url = "git+https://github.com/PrestonKnopp/tree-sitter-gdscript#48b49330888a4669b48619b211cc8da573827725",
-            .hash = "N-V-__8AAA-aGwDV75toHaUpLbuLo0rTTJ8lKOVPJNspiykZ",
+            .url = "git+https://github.com/PrestonKnopp/tree-sitter-gdscript#d28f24a9cc482a5274d77d41918b052e72cc18f4",
+            .hash = "N-V-__8AAISJIwB-Y4xVcE51FDEjG-fE6hMExW_CPhMrSCUB",
         },
         .case = .{
-            .url = "git+https://github.com/travisstaloch/case/#610caade88ca54d2745f115114b08e73e2c6fe02",
-            .hash = "N-V-__8AAIfIAAC_RzCtghVVBVdqUzB8AaaGIyvK2WWz38bC",
+            .url = "https://github.com/travisstaloch/case/archive/refs/tags/0.15.1.tar.gz",
+            .hash = "case-0.0.1-chGYqx_EAADaGJjmoln5M1iMBDTrMdd8to5wdEVpfXm4",
         },
         .cli = .{
-            .url = "git+https://github.com/sam701/zig-cli#bdaab80c0f24624cb4e8b80bb7b34957263f67b8",
-            .hash = "cli-0.9.0-2eKe_zUBAQAuGjFuolxsm2SkNyuMVqk4SaYrwzis5jTp",
+            .url = "git+https://github.com/sam701/zig-cli#f9a516ddc9771ddd2c8c46a280a9ab6cab8261f2",
+            .hash = "cli-0.10.0-2eKe_5kEAQBeHqKxUHNTGnETzu81rqKWwT1WPt1jXBt0",
         },
     },
     .paths = .{
         "build.zig",
         "build.zig.zon",
         "src",
-        // For example...
-        //"LICENSE",
-        //"README.md",
     },
 }

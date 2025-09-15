@@ -2,5 +2,5 @@
 bun = "latest"
 "ubi:DonIsaac/zlint" = "latest"
 "ubi:nektos/act" = "latest"
-zig = "0.14.1"
-zls = "0.14.0"
+zig = "0.15.1"
+"ubi:zigtools/zls" = "0.15.0"

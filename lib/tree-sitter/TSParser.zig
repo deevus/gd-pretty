@@ -1,9 +1,3 @@
-const std = @import("std");
-const ffi = @import("ffi.zig");
-
-const TSParser = @This();
-const TSTree = @import("TSTree.zig");
-
 ptr: *ffi.TSParser,
 
 pub inline fn init() TSParser {
@@ -33,3 +27,21 @@ pub inline fn parseString(self: TSParser, input: []const u8) !TSTree {
         return error.ParseFailed;
     }
 }
+
+pub fn parseFile(self: TSParser, allocator: Allocator, file: File) !TSTree {
+    var buf: [1024]u8 = undefined;
+    var file_reader = file.reader(&buf);
+    var reader = &file_reader.interface;
+
+    const file_contents = try reader.allocRemaining(allocator, .unlimited);
+    return try self.parseString(file_contents);
+}
+
+const std = @import("std");
+const Allocator = std.mem.Allocator;
+const File = std.fs.File;
+
+const ffi = @import("tree-sitter-c");
+
+const TSParser = @This();
+const TSTree = @import("TSTree.zig");

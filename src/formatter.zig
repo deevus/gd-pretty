@@ -1,15 +1,4 @@
-const std = @import("std");
-const ts = @import("tree-sitter");
-const case = @import("case");
-
-const Context = @import("Context.zig");
-const enums = @import("enums.zig");
-const attribute = @import("attribute.zig");
-
-const GdNodeType = enums.GdNodeType;
-const GdWriter = @import("GdWriter.zig");
-
-const WriteFn = *const fn (writer: *GdWriter, node: ts.TSNode) anyerror!void;
+const WriteFn = *const fn (writer: *GdWriter, node: ts.TSNode) GdWriter.Error!void;
 
 const NodeTypeMapValue = struct {
     exists: bool,
@@ -56,9 +45,9 @@ pub fn writeIndent(writer: anytype, context: Context) !void {
     }
 }
 
-pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, writer: anytype, context: Context) !void {
+pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, writer: *Writer, context: Context) GdWriter.Error!void {
     const current_node = cursor.currentNode();
-    const node_type = try current_node.getTypeAsEnum(GdNodeType);
+    const node_type = current_node.getTypeAsEnum(GdNodeType);
 
     if (node_type) |nt| {
         var handled = false;
@@ -105,3 +94,16 @@ fn printTreeRecursive(root: ts.TSNode, writer: anytype, depth: usize) !void {
         try printTreeRecursive(child, writer, depth + 1);
     }
 }
+
+const std = @import("std");
+const Writer = std.io.Writer;
+
+const ts = @import("tree-sitter");
+const case = @import("case");
+
+const enums = @import("enums.zig");
+const GdNodeType = enums.GdNodeType;
+
+const Context = @import("Context.zig");
+const attribute = @import("attribute.zig");
+const GdWriter = @import("GdWriter.zig");

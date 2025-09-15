@@ -1,4 +1,4 @@
-const ffi = @import("ffi.zig");
+const ffi = @import("tree-sitter-c");
 
 const TSTree = @This();
 const TSNode = @import("TSNode.zig");

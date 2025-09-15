@@ -1,5 +1,5 @@
 const std = @import("std");
-const ffi = @import("ffi.zig");
+const ffi = @import("tree-sitter-c");
 
 const TSNode = @This();
 const TSTree = @import("TSTree.zig");
@@ -95,11 +95,11 @@ pub inline fn getTypeAsString(self: TSNode) []const u8 {
     return std.mem.span(ffi.ts_node_type(self.handle));
 }
 
-pub fn getTypeAsEnum(self: TSNode, comptime E: type) !?E {
+pub fn getTypeAsEnum(self: TSNode, comptime E: type) ?E {
     const node_type = self.getTypeAsString();
     var buf: [128]u8 = undefined;
 
-    const slice = try std.fmt.bufPrint(&buf, "{s}", .{node_type});
+    const slice = std.fmt.bufPrint(&buf, "{s}", .{node_type}) catch return null;
 
     return std.meta.stringToEnum(E, slice);
 }
@@ -120,7 +120,7 @@ pub fn firstChildOfType(self: TSNode, comptime enum_value: anytype) !?TSNode {
     const child_count = self.childCount();
     for (0..child_count) |i| {
         const c = self.child(i) orelse continue;
-        const child_type = try c.getTypeAsEnum(@TypeOf(enum_value)) orelse continue;
+        const child_type = c.getTypeAsEnum(@TypeOf(enum_value)) orelse continue;
 
         if (child_type == enum_value) {
             return c;

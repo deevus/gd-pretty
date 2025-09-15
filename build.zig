@@ -35,46 +35,59 @@ pub fn build(b: *std.Build) void {
         .root_module = mod_exe,
     });
 
-    const tree_sitter_lib = b.dependency("tree_sitter", .{
+    const lib_ts_c = b.dependency("tree_sitter", .{
         .target = target,
         .optimize = optimize,
     });
-    const tree_sitter_include_path = tree_sitter_lib.path("lib/include");
+    const ts_c_include_path = lib_ts_c.path("lib/include");
 
-    const tree_sitter_module = b.createModule(.{
+    const dep_ts_gd = b.dependency("tree_sitter_gdscript", .{});
+
+    const translate_ts_c = b.addTranslateC(.{
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = ts_c_include_path.path(b, "tree_sitter/api.h"),
+    });
+
+    const mod_ts_c = b.createModule(.{
+        .root_source_file = translate_ts_c.getOutput(),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    const mod_ts = b.createModule(.{
         .root_source_file = b.path("lib/tree-sitter/root.zig"),
-    });
-    tree_sitter_module.addIncludePath(tree_sitter_include_path);
-
-    exe.linkLibrary(tree_sitter_lib.artifact("tree-sitter"));
-    mod_exe.addImport("tree-sitter", tree_sitter_module);
-
-    const dep_tree_sitter_gdscript = b.dependency("tree_sitter_gdscript", .{});
-
-    const lib_tree_sitter_gdscript = b.addStaticLibrary(.{
-        .name = "tree-sitter-gdscript",
         .target = target,
         .optimize = optimize,
     });
+    mod_ts.addImport("tree-sitter-c", mod_ts_c);
 
-    lib_tree_sitter_gdscript.addCSourceFiles(.{
-        .files = &[_][]const u8{
+    const mod_ts_gd = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+
+    mod_ts_gd.addCSourceFiles(.{
+        .root = dep_ts_gd.builder.path("src"),
+        .files = &.{
             "parser.c",
             "scanner.c",
         },
-        .root = dep_tree_sitter_gdscript.builder.path("src"),
     });
-    lib_tree_sitter_gdscript.linkLibC();
-    lib_tree_sitter_gdscript.addIncludePath(tree_sitter_lib.path("lib/include"));
-    lib_tree_sitter_gdscript.addIncludePath(dep_tree_sitter_gdscript.builder.path("src"));
+    mod_ts_gd.addIncludePath(lib_ts_c.builder.path("lib/include"));
+    mod_ts_gd.addIncludePath(dep_ts_gd.builder.path("src"));
 
-    const tree_sitter_gdscript_module = b.createModule(.{
-        .root_source_file = b.path("lib/lib-tree-sitter-gdscript.zig"),
+    const lib_ts_gd = b.addLibrary(.{
+        .name = "tree-sitter-gdscript",
+        .root_module = mod_ts_gd,
     });
-    tree_sitter_gdscript_module.addIncludePath(dep_tree_sitter_gdscript.builder.path("bindings/swift/"));
 
-    exe.linkLibrary(lib_tree_sitter_gdscript);
-    mod_exe.addImport("tree-sitter-gdscript", tree_sitter_gdscript_module);
+    mod_exe.addImport("tree-sitter", mod_ts);
+    mod_exe.addImport("tree-sitter-gdscript", mod_ts_gd);
+
+    exe.linkLibrary(lib_ts_c.artifact("tree-sitter"));
+    exe.linkLibrary(lib_ts_gd);
 
     // Case module
     const dep_case = b.dependency("case", .{});
@@ -88,7 +101,6 @@ pub fn build(b: *std.Build) void {
     const cli_mod = cli_dep.module("cli");
     mod_exe.addImport("cli", cli_mod);
 
-    b.installArtifact(lib_tree_sitter_gdscript);
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);

@@ -1,29 +1,18 @@
-const std = @import("std");
-const tree_sitter = @import("tree-sitter");
-
-const assert = std.debug.assert;
-const formatter = @import("formatter.zig");
-const enums = @import("enums.zig");
-const attribute = @import("attribute.zig");
-const @"type" = @import("type.zig");
-const Context = @import("Context.zig");
-
 const GdWriter = @This();
-const Node = tree_sitter.TSNode;
-const NodeType = enums.GdNodeType;
 
 pub const Error = error{
     MalformedAST,
     UnexpectedNodeType,
     MissingRequiredChild,
     InvalidNodeStructure,
-} || std.io.AnyWriter.Error;
+    NoSpaceLeft,
+} || Writer.Error;
 
-out: std.io.AnyWriter,
+out: *Writer,
 context: Context,
 
 const Options = struct {
-    writer: std.io.AnyWriter,
+    writer: *Writer,
     context: ?Context = null,
 };
 
@@ -39,7 +28,7 @@ pub const IndentOptions = struct {
     by: u32 = 0,
 };
 
-fn writeIndent(self: *GdWriter, options: IndentOptions) !void {
+fn writeIndent(self: *GdWriter, options: IndentOptions) Error!void {
     if (options.by != 0) {
         self.context.indent_level += options.by;
     }
@@ -66,31 +55,31 @@ pub fn writeAttribute(self: *GdWriter, node: Node) Error!void {
     i += 1;
 }
 
-pub fn writeSubscript(self: *GdWriter, node: Node) !void {
+pub fn writeSubscript(self: *GdWriter, node: Node) Error!void {
     try @"type".writeSubscript(node, self.out, self.context);
 }
 
-pub fn writeType(self: *GdWriter, node: Node) !void {
+pub fn writeType(self: *GdWriter, node: Node) Error!void {
     try @"type".writeType(node, self.out, self.context);
 }
 
-pub fn writeIdentifier(self: *GdWriter, node: Node) !void {
+pub fn writeIdentifier(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeCall(self: *GdWriter, node: Node) !void {
+pub fn writeCall(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
 pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
-    assert(try node.getTypeAsEnum(NodeType) == .class_definition);
+    assert(node.getTypeAsEnum(NodeType) == .class_definition);
 
     var i: u32 = 0;
 
     // "class"
     {
         const class_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(try class_node.getTypeAsEnum(NodeType) == .class);
+        assert(class_node.getTypeAsEnum(NodeType) == .class);
 
         try self.writeTrimmed(class_node);
         try self.out.writeAll(" ");
@@ -100,7 +89,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
     // name
     {
         const name_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(try name_node.getTypeAsEnum(NodeType) == .name);
+        assert(name_node.getTypeAsEnum(NodeType) == .name);
 
         try self.writeIdentifier(name_node);
         i += 1;
@@ -109,7 +98,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
     // extends (optional)
     {
         const extends_node = node.child(i).?;
-        if (try extends_node.getTypeAsEnum(NodeType) == .extends_statement) {
+        if (extends_node.getTypeAsEnum(NodeType) == .extends_statement) {
             try self.out.writeAll(" ");
             try self.writeExtendsStatement(extends_node);
             i += 1;
@@ -119,7 +108,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
     // colon
     {
         const colon_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(try colon_node.getTypeAsEnum(NodeType) == .@":");
+        assert(colon_node.getTypeAsEnum(NodeType) == .@":");
 
         try self.writeTrimmed(colon_node);
         try self.out.writeAll("\n");
@@ -129,7 +118,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
     // body
     {
         const body_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(try body_node.getTypeAsEnum(NodeType) == .body);
+        assert(body_node.getTypeAsEnum(NodeType) == .body);
 
         try self.writeIndent(.{ .by = 1 });
         try self.writeBody(body_node);
@@ -137,27 +126,27 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
     }
 }
 
-pub fn writeBody(self: *GdWriter, node: Node) !void {
-    assert(try node.getTypeAsEnum(NodeType) == .body);
+pub fn writeBody(self: *GdWriter, node: Node) Error!void {
+    assert(node.getTypeAsEnum(NodeType) == .body);
     var cursor = node.child(0).?.cursor();
     try formatter.depthFirstWalk(&cursor, self.out, self.context);
 }
 
-pub fn writePassStatement(self: *GdWriter, node: Node) !void {
-    assert(try node.getTypeAsEnum(NodeType) == .pass_statement);
+pub fn writePassStatement(self: *GdWriter, node: Node) Error!void {
+    assert(node.getTypeAsEnum(NodeType) == .pass_statement);
 
     try self.out.writeAll("pass\n");
 }
 
-pub fn writeSignalStatement(self: *GdWriter, node: Node) !void {
-    assert(try node.getTypeAsEnum(NodeType) == .signal_statement);
+pub fn writeSignalStatement(self: *GdWriter, node: Node) Error!void {
+    assert(node.getTypeAsEnum(NodeType) == .signal_statement);
 
     var i: u32 = 0;
 
     // signal
     {
         const signal_node = node.child(i).?;
-        assert(try signal_node.getTypeAsEnum(NodeType) == .signal);
+        assert(signal_node.getTypeAsEnum(NodeType) == .signal);
 
         try self.writeTrimmed(signal_node);
         try self.out.writeAll(" ");
@@ -168,7 +157,7 @@ pub fn writeSignalStatement(self: *GdWriter, node: Node) !void {
     // identifier
     {
         const name_node = node.child(i).?;
-        assert(try name_node.getTypeAsEnum(NodeType) == .name);
+        assert(name_node.getTypeAsEnum(NodeType) == .name);
 
         try self.writeIdentifier(name_node);
 
@@ -178,7 +167,7 @@ pub fn writeSignalStatement(self: *GdWriter, node: Node) !void {
     // parameters (optional)
     {
         if (node.child(i)) |parameters_node| {
-            assert(try parameters_node.getTypeAsEnum(NodeType) == .parameters);
+            assert(parameters_node.getTypeAsEnum(NodeType) == .parameters);
             try self.writeParameters(parameters_node);
             i += 1;
         }
@@ -188,12 +177,12 @@ pub fn writeSignalStatement(self: *GdWriter, node: Node) !void {
 }
 
 pub fn writeParameters(self: *GdWriter, node: Node) Error!void {
-    assert(try node.getTypeAsEnum(NodeType) == .parameters);
+    assert(node.getTypeAsEnum(NodeType) == .parameters);
 
     try self.out.writeAll("(");
     for (0..node.childCount()) |j| {
         const param = node.child(@intCast(j)) orelse return Error.MissingRequiredChild;
-        const param_type = (try param.getTypeAsEnum(NodeType)).?;
+        const param_type = (param.getTypeAsEnum(NodeType)).?;
 
         const param_text = formatter.trimWhitespace(param.text());
         switch (param_type) {
@@ -209,7 +198,7 @@ pub fn writeParameters(self: *GdWriter, node: Node) Error!void {
     try self.out.writeAll(")");
 }
 
-pub fn writeExtendsStatement(self: *GdWriter, node: Node) !void {
+pub fn writeExtendsStatement(self: *GdWriter, node: Node) Error!void {
     assert(node.childCount() == 2);
 
     // extends
@@ -217,7 +206,7 @@ pub fn writeExtendsStatement(self: *GdWriter, node: Node) !void {
     try self.out.print("{s}", .{formatter.trimWhitespace(node.child(1).?.text())});
 }
 
-pub fn writeVariableStatement(self: *GdWriter, node: Node) !void {
+pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
     for (0..node.childCount()) |i| {
         const prev_child = if (i > 0) node.child(@intCast(i - 1)) else null;
         _ = prev_child;
@@ -225,13 +214,13 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) !void {
         const next_child = node.child(@intCast(i + 1));
 
         if (child) |c| {
-            const nt = (try c.getTypeAsEnum(enums.GdNodeType)).?;
+            const nt = (c.getTypeAsEnum(enums.GdNodeType)).?;
 
             switch (nt) {
                 .name => {
                     const next_child_is_type = blk: {
                         if (next_child) |nc| {
-                            const nc_type = (try nc.getTypeAsEnum(enums.GdNodeType)).?;
+                            const nc_type = (nc.getTypeAsEnum(enums.GdNodeType)).?;
 
                             if (nc_type == .@":") {
                                 break :blk true;
@@ -261,14 +250,14 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     // func keyword
     {
         const func_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(try func_node.getTypeAsEnum(NodeType) == .func);
+        assert(func_node.getTypeAsEnum(NodeType) == .func);
         try self.out.writeAll("func");
     }
     i += 1;
 
     // optional name
     {
-        if (try node.child(i).?.getTypeAsEnum(NodeType) == .name) {
+        if (node.child(i).?.getTypeAsEnum(NodeType) == .name) {
             const text = formatter.trimWhitespace(node.child(i).?.text());
             try self.out.writeAll(" ");
             try self.out.writeAll(text);
@@ -279,12 +268,12 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     // parameters
     {
         const params_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(try params_node.getTypeAsEnum(NodeType) == .parameters);
+        assert(params_node.getTypeAsEnum(NodeType) == .parameters);
 
         try self.out.writeAll("(");
         for (0..params_node.childCount()) |j| {
             const param = params_node.child(@intCast(j)) orelse return Error.MissingRequiredChild;
-            const param_type = (try param.getTypeAsEnum(NodeType)).?;
+            const param_type = (param.getTypeAsEnum(NodeType)).?;
 
             const param_text = formatter.trimWhitespace(param.text());
             switch (param_type) {
@@ -305,12 +294,12 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     {
         // arrow
         const return_arrow_node = node.child(i) orelse return Error.MissingRequiredChild;
-        if (try return_arrow_node.getTypeAsEnum(NodeType) == .@"->") {
+        if (return_arrow_node.getTypeAsEnum(NodeType) == .@"->") {
             i += 1;
 
             // type
             const type_node = node.child(i) orelse return Error.MissingRequiredChild;
-            assert(try type_node.getTypeAsEnum(NodeType) == .type);
+            assert(type_node.getTypeAsEnum(NodeType) == .type);
             i += 1;
 
             try self.out.writeAll(" -> ");
@@ -321,7 +310,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     // colon
     {
         const colon_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(try colon_node.getTypeAsEnum(NodeType) == .@":");
+        assert(colon_node.getTypeAsEnum(NodeType) == .@":");
         try self.out.writeAll(":\n");
     }
     i += 1;
@@ -329,7 +318,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     // body
     {
         const body_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(try body_node.getTypeAsEnum(NodeType) == .body);
+        assert(body_node.getTypeAsEnum(NodeType) == .body);
 
         var body_cursor = body_node.child(0).?.cursor();
         try formatter.depthFirstWalk(&body_cursor, self.out, self.context.indent());
@@ -338,7 +327,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
 
 pub fn writeReturnStatement(self: *GdWriter, node: Node) Error!void {
     const return_node = node.child(0) orelse return Error.MissingRequiredChild;
-    assert(try return_node.getTypeAsEnum(NodeType) == .@"return");
+    assert(return_node.getTypeAsEnum(NodeType) == .@"return");
     try self.out.writeAll("return ");
 
     var next_node = node.child(1) orelse return;
@@ -349,12 +338,12 @@ pub fn writeReturnStatement(self: *GdWriter, node: Node) Error!void {
 
 pub fn writeClassNameStatement(self: *GdWriter, node: Node) Error!void {
     const class_name_node = node.child(0) orelse return Error.MissingRequiredChild;
-    assert(try class_name_node.getTypeAsEnum(NodeType) == .class_name);
+    assert(class_name_node.getTypeAsEnum(NodeType) == .class_name);
     try self.writeTrimmed(class_name_node);
     try self.out.writeAll(" ");
 
     const name_node = node.child(1) orelse return Error.MissingRequiredChild;
-    assert(try name_node.getTypeAsEnum(NodeType) == .name);
+    assert(name_node.getTypeAsEnum(NodeType) == .name);
     try self.writeTrimmed(name_node);
     try self.out.writeAll("\n");
 }
@@ -364,398 +353,413 @@ pub fn writeClassNameStatement(self: *GdWriter, node: Node) Error!void {
 // ============================================================================
 
 // Critical Language Features
-pub fn writeSource(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeSource(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement source node handling (root of the AST)
     try self.writeTrimmed(node);
 }
 
-pub fn writeConstStatement(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeConstStatement(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement const declarations (const VAR = value)
     try self.writeTrimmed(node);
 }
 
-pub fn writeIfStatement(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeIfStatement(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement if statements with proper indentation
     try self.writeTrimmed(node);
 }
 
-pub fn writeForStatement(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeForStatement(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement for loops with proper indentation
     try self.writeTrimmed(node);
 }
 
-pub fn writeAssignment(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeAssignment(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement variable assignments (var = value)
     try self.writeTrimmed(node);
 }
 
-pub fn writeAugmentedAssignment(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeAugmentedAssignment(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement compound assignments (+=, -=, etc.)
     try self.writeTrimmed(node);
 }
 
-pub fn writeExpressionStatement(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeExpressionStatement(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement expression statements
     try self.writeTrimmed(node);
 }
 
-pub fn writeMatchStatement(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeMatchStatement(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement match statements with proper indentation
     try self.writeTrimmed(node);
 }
 
-pub fn writeMatchBody(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeMatchBody(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement match body with proper indentation
     try self.writeTrimmed(node);
 }
 
-pub fn writePatternSection(self: *GdWriter, node: Node) anyerror!void {
+pub fn writePatternSection(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement match patterns
     try self.writeTrimmed(node);
 }
 
-pub fn writeElseClause(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeElseClause(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement else clauses with proper indentation
     try self.writeTrimmed(node);
 }
 
-pub fn writeElifClause(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeElifClause(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement elif clauses with proper indentation
     try self.writeTrimmed(node);
 }
 
-pub fn writeLambda(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeLambda(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement lambda expressions
     try self.writeTrimmed(node);
 }
 
-pub fn writeGetBody(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeGetBody(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement getter method bodies
     try self.writeTrimmed(node);
 }
 
-pub fn writeSetBody(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeSetBody(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement setter method bodies
     try self.writeTrimmed(node);
 }
 
-pub fn writeSetget(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeSetget(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement setget property declarations
     try self.writeTrimmed(node);
 }
 
-pub fn writeGetNode(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeGetNode(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement get_node expressions ($Node)
     try self.writeTrimmed(node);
 }
 
 // Data Types and Literals
-pub fn writeArray(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeArray(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement array literals [1, 2, 3] with proper spacing
     try self.writeTrimmed(node);
 }
 
-pub fn writeString(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeString(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement string literals with proper escaping
     try self.writeTrimmed(node);
 }
 
-pub fn writeInteger(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeInteger(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement integer literals
     try self.writeTrimmed(node);
 }
 
-pub fn writeFloat(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeFloat(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement float literals
     try self.writeTrimmed(node);
 }
 
-pub fn writeDictionary(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeDictionary(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement dictionary literals {key: value} with proper spacing
     try self.writeTrimmed(node);
 }
 
-pub fn writePair(self: *GdWriter, node: Node) anyerror!void {
+pub fn writePair(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement key-value pairs in dictionaries
     try self.writeTrimmed(node);
 }
 
-pub fn writeTrue(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeTrue(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement boolean true literal
     try self.writeTrimmed(node);
 }
 
-pub fn writeFalse(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeFalse(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement boolean false literal
     try self.writeTrimmed(node);
 }
 
 // Expressions and Operations
-pub fn writeBinaryOperator(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement binary operations with proper spacing
     try self.writeTrimmed(node);
 }
 
-pub fn writeComparisonOperator(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeComparisonOperator(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement comparison operations with proper spacing
     try self.writeTrimmed(node);
 }
 
-pub fn writeConditionalExpression(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeConditionalExpression(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement ternary/conditional expressions
     try self.writeTrimmed(node);
 }
 
-pub fn writeAttributeCall(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeAttributeCall(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement method calls on objects
     try self.writeTrimmed(node);
 }
 
-pub fn writeArguments(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeArguments(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement function call arguments with proper spacing
     try self.writeTrimmed(node);
 }
 
-pub fn writeParenthesizedExpression(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeParenthesizedExpression(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement expressions in parentheses
     try self.writeTrimmed(node);
 }
 
 // Type System
-pub fn writeInferredType(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeInferredType(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement type inference markers (:=)
     try self.writeTrimmed(node);
 }
 
-pub fn writeTypedParameter(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeTypedParameter(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement function parameters with types
     try self.writeTrimmed(node);
 }
 
-pub fn writeAnnotation(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeAnnotation(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement single annotation (@export, @onready, etc.)
     try self.writeTrimmed(node);
 }
 
-pub fn writeAnnotations(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeAnnotations(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement multiple annotations
     try self.writeTrimmed(node);
 }
 
 // Keywords (many may be handled by their parent nodes)
-pub fn writeSignal(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeSignal(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement signal keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writePass(self: *GdWriter, node: Node) anyerror!void {
+pub fn writePass(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement pass keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeFunc(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeFunc(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement func keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeExtends(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeExtends(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement extends keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeConst(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeConst(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement const keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeVar(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeVar(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement var keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeFor(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeFor(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement for keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeIn(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeIn(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement in keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeIf(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeIf(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement if keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeElse(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeElse(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement else keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeElif(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeElif(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement elif keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeReturn(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeReturn(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement return keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeGet(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeGet(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement get keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeSet(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeSet(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement set keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeMatch(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeMatch(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement match keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeClassName(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeClassName(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement class_name keyword
     try self.writeTrimmed(node);
 }
 
-pub fn writeClass(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeClass(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement class keyword
     try self.writeTrimmed(node);
 }
 
 // Utility Methods
-pub fn writeComment(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeComment(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement comment preservation with proper spacing
     try self.writeTrimmed(node);
 }
 
-pub fn writeName(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeName(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement name nodes (may be handled by writeIdentifier)
     try self.writeTrimmed(node);
 }
 
 // Punctuation and Operators (low priority - often just pass through)
-pub fn writeAt(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeAt(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeOpenParen(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeOpenParen(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeCloseParen(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeCloseParen(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeOpenBracket(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeOpenBracket(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeCloseBracket(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeCloseBracket(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeOpenBrace(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeOpenBrace(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeCloseBrace(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeCloseBrace(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeComma(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeComma(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeDot(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeDot(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeColon(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeColon(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeSemicolon(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeSemicolon(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writePlus(self: *GdWriter, node: Node) anyerror!void {
+pub fn writePlus(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writePlusEquals(self: *GdWriter, node: Node) anyerror!void {
+pub fn writePlusEquals(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeMinus(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeMinus(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeMultiply(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeMultiply(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeDivide(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeDivide(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeModulo(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeModulo(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeLessThan(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeLessThan(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeGreaterThan(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeGreaterThan(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeLessEqual(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeLessEqual(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeGreaterEqual(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeGreaterEqual(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeEquals(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeEquals(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeNotEquals(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeNotEquals(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeAssign(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeAssign(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeLogicalAnd(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeLogicalAnd(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeLogicalOr(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeLogicalOr(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeLogicalNot(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeLogicalNot(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeQuote(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeQuote(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeArrow(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeArrow(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeColonEquals(self: *GdWriter, node: Node) anyerror!void {
+pub fn writeColonEquals(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
+
+const std = @import("std");
+const assert = std.debug.assert;
+const Writer = std.io.Writer;
+
+const tree_sitter = @import("tree-sitter");
+const Node = tree_sitter.TSNode;
+
+const enums = @import("enums.zig");
+const NodeType = enums.GdNodeType;
+
+const formatter = @import("formatter.zig");
+const attribute = @import("attribute.zig");
+const @"type" = @import("type.zig");
+const Context = @import("Context.zig");

@@ -1,5 +1,5 @@
 const std = @import("std");
-const ffi = @import("ffi.zig");
+const ffi = @import("tree-sitter-c");
 
 const TSTreeCursor = @This();
 const TSTree = @import("TSTree.zig");

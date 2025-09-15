@@ -1,6 +1,5 @@
 const std = @import("std");
 const ts = @import("tree-sitter");
-const gd = @import("tree-sitter-gdscript");
 const cli = @import("cli");
 
 const TSParser = ts.TSParser;
@@ -68,71 +67,52 @@ pub fn main() !void {
 
 fn formatFiles() !void {
     if (config.version) {
-        const stdout = std.io.getStdOut().writer();
-        try stdout.print("gd-pretty {s}\n", .{version});
-        return;
+        try printMessageAndExit("gd-pretty {s}\n", .{version});
     }
 
     // Handle positional arguments - zig-cli should populate config.files
     if (config.files.len == 0) {
-        const stderr = std.io.getStdErr().writer();
-        try stderr.print("Error: no files provided\n\nUSAGE: gd-pretty [OPTIONS] <files...>\n\nRun 'gd-pretty --help' for more information.\n", .{});
-        std.process.exit(1);
+        try printErrorAndExit(
+            "Error: no files provided\n\nUSAGE: gd-pretty [OPTIONS] <files...>\n\nRun 'gd-pretty --help' for more information.\n",
+            .{},
+        );
     }
 
     const ts_parser = TSParser.init();
     defer ts_parser.deinit();
 
-    const ts_gdscript = gd.tree_sitter_gdscript();
+    const ts_gdscript = tree_sitter_gdscript();
     const success = ts_parser.setLanguage(@ptrCast(ts_gdscript));
     if (!success) {
-        const stderr = std.io.getStdErr().writer();
-        try stderr.print("Error: failed to load GDScript grammar\n", .{});
-        std.process.exit(1);
+        try printErrorAndExit("Error: failed to load GDScript grammar\n", .{});
     }
 
     var arena = std.heap.ArenaAllocator.init(config.allocator);
     defer arena.deinit();
     const arena_allocator = arena.allocator();
 
-    var stdout = std.io.getStdOut();
-    const stdout_writer = stdout.writer();
+    var stdout_file = std.fs.File.stdout();
+    defer stdout_file.close();
 
-    var buffered_writer = std.io.bufferedWriter(stdout_writer);
-    const br = buffered_writer.writer();
-    defer buffered_writer.flush() catch {};
-
-    var counting_writer = std.io.countingWriter(br);
-    const writer = counting_writer.writer().any();
+    var buf: [1024]u8 = undefined;
+    var stdout_writer = stdout_file.writer(&buf);
+    const writer = &stdout_writer.interface;
 
     for (config.files) |path| {
         const file = std.fs.cwd().openFile(path, .{}) catch |err| {
-            const stderr = std.io.getStdErr().writer();
-            try stderr.print("Error: failed to open file '{s}': {}\n", .{ path, err });
-            std.process.exit(1);
+            try printErrorAndExit("Error: failed to open file '{s}': {}\n", .{ path, err });
         };
         defer file.close();
 
-        const buf = arena_allocator.alloc(u8, file.getEndPos() catch |err| {
-            const stderr = std.io.getStdErr().writer();
-            try stderr.print("Error: failed to read file '{s}': {}\n", .{ path, err });
-            std.process.exit(1);
-        }) catch |err| {
-            const stderr = std.io.getStdErr().writer();
-            try stderr.print("Error: failed to allocate memory for file '{s}': {}\n", .{ path, err });
-            std.process.exit(1);
+        var file_reader = file.reader(&buf);
+        var r = &file_reader.interface;
+
+        const file_contents = r.allocRemaining(arena_allocator, .unlimited) catch |err| {
+            try printErrorAndExit("Error: failed to read file '{s}': {}\n", .{ path, err });
         };
 
-        _ = file.readAll(buf) catch |err| {
-            const stderr = std.io.getStdErr().writer();
-            try stderr.print("Error: failed to read file '{s}': {}\n", .{ path, err });
-            std.process.exit(1);
-        };
-
-        var tree = ts_parser.parseString(buf) catch |err| {
-            const stderr = std.io.getStdErr().writer();
-            try stderr.print("Error: failed to parse file '{s}': {}\n", .{ path, err });
-            std.process.exit(1);
+        var tree = ts_parser.parseString(file_contents) catch |err| {
+            try printErrorAndExit("Error: failed to parse file '{s}': {}\n", .{ path, err });
         };
         defer tree.deinit();
 
@@ -140,18 +120,42 @@ fn formatFiles() !void {
         var cursor = root_node.cursor();
 
         formatter.depthFirstWalk(&cursor, writer, .{}) catch |err| {
-            const stderr = std.io.getStdErr().writer();
-            try stderr.print("Error: failed to format file '{s}': {}\n", .{ path, err });
-            std.process.exit(1);
+            try printErrorAndExit("Error: failed to format file '{s}': {}\n", .{ path, err });
         };
     }
+}
+
+fn printMessageAndExit(comptime fmt: []const u8, args: anytype) !noreturn {
+    var stdout_file = std.fs.File.stdout();
+    defer stdout_file.close();
+
+    var buf: [128]u8 = undefined;
+    var stdout_writer = stdout_file.writer(&buf);
+    var w = &stdout_writer.interface;
+    try w.print(fmt, args);
+    try w.flush();
+
+    std.process.exit(0);
+}
+
+fn printErrorAndExit(comptime fmt: []const u8, args: anytype) !noreturn {
+    var stderr_file = std.fs.File.stderr();
+    defer stderr_file.close();
+
+    var buf: [128]u8 = undefined;
+    var stderr_writer = stderr_file.writer(&buf);
+    var w = &stderr_writer.interface;
+    try w.print(fmt, args);
+    try w.flush();
+
+    std.process.exit(1);
 }
 
 test "input output pairs" {
     const ts_parser = TSParser.init();
     defer ts_parser.deinit();
 
-    const ts_gdscript = gd.tree_sitter_gdscript();
+    const ts_gdscript = tree_sitter_gdscript();
     _ = ts_parser.setLanguage(@ptrCast(ts_gdscript));
 
     var dir = try std.fs.cwd().openDir("tests/input-output-pairs", .{
@@ -162,6 +166,8 @@ test "input output pairs" {
     var arena = ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
+
+    var buf: [1024]u8 = undefined;
 
     var it = dir.iterateAssumeFirstIteration();
     while (try it.next()) |entry| {
@@ -177,16 +183,19 @@ test "input output pairs" {
             var out_file = try dir.createFile(out_file_name, .{});
             defer out_file.close();
 
-            const buffer = try allocator.alloc(u8, try in_file.getEndPos());
-            _ = try in_file.readAll(buffer);
+            var out_file_writer = out_file.writer(&buf);
+            const writer = &out_file_writer.interface;
 
-            var tree = try ts_parser.parseString(buffer);
+            var tree = try ts_parser.parseFile(allocator, in_file);
             var cursor = tree.rootNode().cursor();
 
-            try formatter.depthFirstWalk(&cursor, out_file.writer().any(), .{});
+            try formatter.depthFirstWalk(&cursor, writer, .{});
+            try writer.flush();
         }
     }
 }
 
 const ArenaAllocator = std.heap.ArenaAllocator;
 const testing = std.testing;
+
+extern fn tree_sitter_gdscript() ?*anyopaque;
