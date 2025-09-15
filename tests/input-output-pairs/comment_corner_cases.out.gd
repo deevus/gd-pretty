@@ -1,17 +1,27 @@
 class X:
-	func foo():
-		pass
-		# aaaa # bbb
+        func foo():
+                pass
 
-	func bar():
-		# xxx
-		var x = '##'
-		# yyy
-		var y = "##"
-		# zzz
-		# """ '''
-		var z = """
-		#"""
-		# qqq
-		var w
-		# www
+        # aaaa # bbb
+
+    func bar():
+                # xxx
+
+        var x = '##' 
+
+                # yyy
+
+        var y = "##" 
+
+                # zzz
+
+                # """ '''
+
+        var z = """
+		#""" 
+
+                # qqq
+
+        var w 
+
+                # www

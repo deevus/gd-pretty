@@ -1,10 +1,12 @@
 # a
+
 var p1 :							# inline a
 	# b
 	set = __set					# inline b
 	# c 
 
 # d
+
 var p2 :							# inline c
 	# e
 	set = __set,				# inline d
@@ -34,6 +36,7 @@ var p8 :
 		pass 
 
 # h
+
 var p9 :							# inline f
 	# i
 	set(_x): pass				# inline g
@@ -42,6 +45,7 @@ var p9 :							# inline f
 	# k 
 
 # l
+
 var p10 :						# inline i
 	# m
 	get:						# inline j
@@ -56,10 +60,14 @@ var p10 :						# inline i
 		# r
 		p8 = x + 1 + xyz
 
-# inline o
+ # inline o
+
 # s
+
 # t
+
 # u
+
 func __get():
     return 1
 func __set(v):

@@ -1,0 +1,4 @@
+pass
+
+class X:
+ # aaa

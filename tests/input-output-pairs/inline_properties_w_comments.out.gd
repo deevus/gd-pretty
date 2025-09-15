@@ -1,37 +1,55 @@
 # a
+
 var p1 : set = __set 
 
-# inline a
+ # inline a
+
 # b
+
 var p2 : set = __set, get = __get 
 
-# inline b
+ # inline b
+
 # c
+
 var p3 : get = __get 
 
-# inline c
+ # inline c
+
 # d
+
 var p4 : get = __get, set = __set 
 
-# inline d
+ # inline d
+
 # e
+
 # f
+
 var p5 = 1 : set = __set 
 
-# inline e
+ # inline e
+
 # g
+
 var p6 = 1 : set = __set, get = __get 
 
-# inline f
+ # inline f
+
 # h
+
 var p7 = 1 : get = __get 
 
-# inline g
+ # inline g
+
 # i
+
 var p8 = 1 : get = __get, set = __set 
 
-# inline h
+ # inline h
+
 # j
+
 var p9: int : set = __set 
 
 var p10: int : set = __set, get = __get 

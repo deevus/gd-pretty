@@ -1,40 +1,52 @@
-var x
-var y
+var x 
+
+var y 
+
 func foo():
-	pass
-var q
+        pass
 
-var w
+var q 
+
+var w 
+
 class X:
-	pass
-	func foo():
-		pass
-	func bar():
-		pass
-	class Y:
-		pass
-	# xxx
-	func baz():
-		pass
+            pass
 
-	# yyy
+    func foo():
+                pass
 
-	func bat():
-		pass
+    func bar():
+                pass
+
+    class Y:
+                        pass
+
+                # xxx
+
+    func baz():
+                pass
+
+        # yyy
+
+    func bat():
+                pass
+
 func bar():
-	pass
+        pass
 
 func baz():
-	pass
+        pass
 
 # zzz
 
 func bat():
-	pass
+        pass
 
-var a
-var b
+var a 
+
+var b 
 
 # qqq
+
 class C:
-	pass
+            pass

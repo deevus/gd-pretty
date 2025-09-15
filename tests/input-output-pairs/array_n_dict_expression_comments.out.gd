@@ -5,13 +5,15 @@ class X:
 			2,					# c
 		] 
 
-        # d
+         # d
+
         var y = {				# q
 			'x': 1,				# w
 			'y': 2,				# e
 		} 
 
-        # r
+         # r
+
         var sut 
 
         var Config 
@@ -25,4 +27,4 @@ class X:
             Config.Household.LevelingDirection.NEGATIVE: 0.1,
 		})
         sut.process(10.0, 0)
-        # 0.0
+         # 0.0

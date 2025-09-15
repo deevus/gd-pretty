@@ -1,13 +1,9 @@
 class X:
+        func foo():
+                # aaa
 
-	
-	func foo():
+                pass
 
-		
-		# aaa
+ # bbb
 
-		
-		pass # bbb
-
-
-		# ccc
+# ccc

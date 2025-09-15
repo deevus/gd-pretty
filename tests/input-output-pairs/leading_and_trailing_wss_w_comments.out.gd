@@ -1,7 +1,9 @@
 class X:
         func foo():
-        # aaa
+                # aaa
+
                 pass
 
-#  bbb
+ #  bbb
+
 # 	ccc

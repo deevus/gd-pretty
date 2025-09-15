@@ -1,168 +1,165 @@
 func a():
-	@warning_ignore("unused_variable")
-	var x: Array[int] = [ 1, 2, ]
+    @warning_ignore("unused_variable")
+    var x: Array[int] = [ 1, 2, ] 
 
 func b():
-	@warning_ignore("unused_variable") var x: Array[int] = [ 1, 2, ]
+    @warning_ignore("unused_variable") var x: Array[int] = [ 1, 2, ] 
 
 func d():
-	@warning_ignore("unused_variable") @warning_ignore("unused_variable") var x: Array[int] = [ 1, 2, ]
+    @warning_ignore("unused_variable") @warning_ignore("unused_variable") var x: Array[int] = [ 1, 2, ] 
 
 @warning_ignore("unused_parameter")
 func e():
-	@warning_ignore("unused_variable")
-	@warning_ignore("unused_variable")
-	var x: Array[int] = [ 1, 2, ]
+    @warning_ignore("unused_variable")
+    @warning_ignore("unused_variable")
+    var x: Array[int] = [ 1, 2, ] 
 
 func f():
-	if true:
+    if true:
 		@warning_ignore("unused_variable")
 		@warning_ignore("unused_variable")
 		var x: Array[int] = [ 1, 2, ]
-
 func g():
-	@warning_ignore("unused_variable")
-
+    @warning_ignore("unused_variable")
 func h():
-	if true:
+    if true:
 		@warning_ignore("unused_variable")
-
 @rpc
 func i():
-	pass
+        pass
 
 @rpc("any_peer", "call_local")
 func j():
-	pass
+        pass
 
 @warning_ignore("unassigned_variable")
 func k01():
-	pass
+        pass
 
 @warning_ignore("unassigned_variable_op_assign")
 func k02():
-	pass
+        pass
 
 @warning_ignore("unused_parameter")
 func k03():
-	pass
+        pass
 
 @warning_ignore("shadowed_global_identifier")
 func k04():
-	pass
+        pass
 
 @warning_ignore("unreachable_code")
 func k05():
-	pass
+        pass
 
 @warning_ignore("unreachable_pattern")
 func k06():
-	pass
+        pass
 
 @warning_ignore("standalone_expression")
 func k07():
-	pass
+        pass
 
 @warning_ignore("standalone_ternary")
 func k08():
-	pass
+        pass
 
 @warning_ignore("incompatible_ternary")
 func k09():
-	pass
+        pass
 
 @warning_ignore("untyped_declaration")
 func k10():
-	pass
+        pass
 
 @warning_ignore("inferred_declaration")
 func k11():
-	pass
+        pass
 
 @warning_ignore("unsafe_property_access")
 func k12():
-	pass
+        pass
 
 @warning_ignore("unsafe_method_access")
 func k13():
-	pass
+        pass
 
 @warning_ignore("unsafe_cast")
 func k14():
-	pass
+        pass
 
 @warning_ignore("unsafe_call_argument")
 func k15():
-	pass
+        pass
 
 @warning_ignore("unsafe_void_return")
 func k16():
-	pass
+        pass
 
 @warning_ignore("return_value_discarded")
 func k17():
-	pass
+        pass
 
 @warning_ignore("static_called_on_instance")
 func k18():
-	pass
+        pass
 
 @warning_ignore("redundant_await")
 func k19():
-	pass
+        pass
 
 @warning_ignore("assert_always_true")
 func k20():
-	pass
+        pass
 
 @warning_ignore("assert_always_false")
 func k21():
-	pass
+        pass
 
 @warning_ignore("integer_division")
 func k22():
-	pass
+        pass
 
 @warning_ignore("narrowing_conversion")
 func k23():
-	pass
+        pass
 
 @warning_ignore("int_as_enum_without_cast")
 func k24():
-	pass
+        pass
 
 @warning_ignore("int_as_enum_without_match")
 func k25():
-	pass
+        pass
 
 @warning_ignore("enum_variable_without_default")
 func k26():
-	pass
+        pass
 
 @warning_ignore("deprecated_keyword")
 func k27():
-	pass
+        pass
 
 @warning_ignore("confusable_identifier")
 func k28():
-	pass
+        pass
 
 @warning_ignore("confusable_local_declaration")
 func k29():
-	pass
+        pass
 
 @warning_ignore("confusable_local_usage")
 func k30():
-	pass
+        pass
 
 @warning_ignore("confusable_capture_reassignment")
 func k31():
-	pass
+        pass
 
 @warning_ignore("inference_on_variant")
 func k32():
-	pass
+        pass
 
 @warning_ignore("native_method_override")
 func k33():
-	pass
+        pass
