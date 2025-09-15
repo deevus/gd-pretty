@@ -1,9 +1,7 @@
 func foo(x):
-        pass
-
+    pass
 func bar(x, y):
-        pass
-
+    pass
 func actual_params():
     foo(func():
 		var x = 1

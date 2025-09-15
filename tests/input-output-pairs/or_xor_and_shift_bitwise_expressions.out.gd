@@ -1,5 +1,5 @@
 class X:
-        func foo():
+    func foo():
         var a = 1 << 2 >> 3
 
         var b = 1 & 1 & 1

@@ -1,5 +1,5 @@
 class X:
-        func foo(p):
+    func foo(p):
         var x = (((1))) 
 
         var y = foo((1)) 
@@ -17,4 +17,4 @@ class X:
         var e = a[(1)] 
 
     func bar(, ):
-                pass
+        pass

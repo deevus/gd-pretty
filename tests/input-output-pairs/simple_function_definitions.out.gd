@@ -1,30 +1,23 @@
 class Y:
-        
+    
 class X:
-        extends Y
+    extends Y
     func foo(a):
-                pass
-
+        pass
     func bar(a, b):
-                pass
-
+        pass
     func baz(a, ):
-                pass
-
+        pass
     func bax(a, ):
-                pass
-
+        pass
     func bac(a, b:int):
-                pass
-
+        pass
     func bav(a, ):
-                pass
-
+        pass
     func bab(a, , ) -> int:
         return 1
     func ban(a, b, c, ):
-                pass
-
+        pass
 class Z:
-        extends Y
+    extends Y
     

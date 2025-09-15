@@ -1,5 +1,5 @@
 class X:
-        func foo(z):
+    func foo(z):
         var x 
 
         x = 1

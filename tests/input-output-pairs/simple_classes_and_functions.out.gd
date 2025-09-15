@@ -1,16 +1,12 @@
 class X:
-            pass
-
+    pass
     func foo():
-                pass
-
+        pass
     class Y:
-                func bar():
-                        pass
-
-class Z:
+        func bar():
             pass
-
+class Z:
+    pass
 class Q:
-        class W:
-                        pass
+    class W:
+        pass

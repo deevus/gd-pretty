@@ -1,8 +1,7 @@
 class X:
-        # aaa
+    # aaa
 
-        pass
-
+    pass
     var x 
 
     # bbb

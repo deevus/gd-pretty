@@ -1,5 +1,5 @@
 class X:
-        func foo(x):
+    func foo(x):
         match x:
 			1:
 				pass

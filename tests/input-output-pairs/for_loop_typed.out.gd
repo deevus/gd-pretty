@@ -1,5 +1,5 @@
 class X:
-        func foo():
+    func foo():
         var a: Array[int] = [1] 
 
         for i:int in a:

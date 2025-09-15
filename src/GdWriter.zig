@@ -240,9 +240,11 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
                 },
                 .body => {
                     log.debug("writeClassDefinition: entering body with indent_level={}", .{self.context.indent_level});
-                    try self.writeIndent(.{ .by = 1 });
+                    // Create temporary context with increased indentation
+                    const old_indent = self.context.indent_level;
+                    self.context.indent_level += 1;
                     try self.writeBody(child);
-                    self.context.indent_level -= 1;
+                    self.context.indent_level = old_indent;
                     log.debug("writeClassDefinition: exited body, indent_level={}", .{self.context.indent_level});
                     found_body = true;
                     break;
@@ -322,9 +324,8 @@ pub fn writePassStatement(self: *GdWriter, node: Node) Error!void {
     log.debug("writePassStatement: indent={}, line_width={}, bytes_written={}", .{ self.context.indent_level, self.getCurrentLineWidth(), self.bytes_written });
     assert(node.getTypeAsEnum(NodeType) == .pass_statement);
 
-    // Write proper indentation before the statement
-    try formatter.writeIndent(self.writer, self.context);
-    try self.write("pass\n", .{});
+    // Indentation is handled by writeBody, just write the statement
+    try self.write("pass", .{});
 }
 
 pub fn writeSignalStatement(self: *GdWriter, node: Node) Error!void {

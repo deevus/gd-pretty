@@ -1,6 +1,5 @@
 class WeaponSystemBullet extends Node:
-            pass
-
+    pass
 func foo():
     var bullet_scene 
 

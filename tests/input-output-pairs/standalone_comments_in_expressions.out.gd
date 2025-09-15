@@ -44,8 +44,7 @@ func foo():
 func bar(a, b):
     # rr4
 
-        pass
-
+    pass
 func baz():
     bar(
 		# qq5

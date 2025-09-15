@@ -1,5 +1,5 @@
 class SubClass:
-        
+    
 var a: Array[int] 
 
 var b: Array[int] = [1] 

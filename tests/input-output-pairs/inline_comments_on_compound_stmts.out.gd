@@ -1,5 +1,4 @@
 pass
-
 class X: # aaa
-        func foo(): # bbb
-                pass
+    func foo(): # bbb
+        pass

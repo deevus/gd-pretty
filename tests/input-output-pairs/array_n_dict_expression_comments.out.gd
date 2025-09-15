@@ -1,5 +1,5 @@
 class X:
-        func foo():
+    func foo():
         var x = [				# a
 			1,					# b
 			2,					# c

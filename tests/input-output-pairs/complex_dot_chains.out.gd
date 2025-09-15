@@ -1,6 +1,5 @@
 func cccc(a, b, c):
-        pass
-
+    pass
 func foo(aaaaa):
     var x = aaaaa.bbbbb.cccc[1].ddd().ffff.ggg.hhh().iii.jjj.kkkkkkk.llllllll.mmmmmmm.nnnnnnnn.ooooo.ppppppppppp 
 

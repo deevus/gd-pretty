@@ -3,45 +3,35 @@ var x
 var y 
 
 func foo():
-        pass
-
+    pass
 var q 
 
 var w 
 
 class X:
-            pass
-
+    pass
     func foo():
-                pass
-
+        pass
     func bar():
-                pass
-
+        pass
     class Y:
-                        pass
-
+        pass
         # xxx
 
     func baz():
-                pass
-
+        pass
     # yyy
 
     func bat():
-                pass
-
+        pass
 func bar():
-        pass
-
+    pass
 func baz():
-        pass
-
+    pass
 # zzz
 
 func bat():
-        pass
-
+    pass
 var a 
 
 var b 
@@ -49,4 +39,4 @@ var b
 # qqq
 
 class C:
-            pass
+    pass

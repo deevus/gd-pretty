@@ -1,5 +1,5 @@
 class X:
-        func foo():
+    func foo():
         var x = {'a': 1, 'c': 1, 'b': 1,} 
 
         var y = {

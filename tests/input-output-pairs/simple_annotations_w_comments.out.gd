@@ -32,7 +32,7 @@ var c: int = 50
 # i
 
 class Foo:
-        extends Node
+    extends Node
     # j
 
     @onready var d  # inline e

@@ -1,5 +1,5 @@
 class X:
-        func foo():
+    func foo():
         if true:
 			pass
 			pass

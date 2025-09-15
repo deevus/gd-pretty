@@ -1,18 +1,14 @@
 extends "res://dummy.gd"
 class C:
-        extends "res://dummy.gd".X
+    extends "res://dummy.gd".X
 class D extends "res://dummy.gd".X:
-            pass
-
+    pass
 class E extends "res://dummy.gd":
-            pass
-
+    pass
 class F extends E:
-            pass
-
+    pass
 class G:
-        class Y:
-                        pass
-
+    class Y:
+        pass
 class Z:
-        extends G.Y
+    extends G.Y

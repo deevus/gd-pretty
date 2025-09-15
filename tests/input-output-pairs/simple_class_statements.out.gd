@@ -1,14 +1,12 @@
 class A:
-        class B:
-                        pass
-
+    class B:
+        pass
 class X:
-        signal some
+    signal some
 
     signal some2()
 
-        pass
-
+    pass
     const a = 1
     const b := 2
     const c : int = 3
@@ -25,6 +23,6 @@ class X:
     var xx: A.B 
 
 class Y:
-        extends X
+    extends X
 class Z extends X:
-            pass
+    pass

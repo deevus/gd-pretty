@@ -37,8 +37,7 @@ func foo():
 
     # var x17 = func(): for x : int in [1]: pass
 
-        pass
-
+    pass
 func bar():
     var x1 = func():
 		pass 
@@ -103,4 +102,4 @@ func bar():
 			_:
 				pass 
 
-        pass
+    pass

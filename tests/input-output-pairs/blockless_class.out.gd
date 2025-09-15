@@ -1,7 +1,7 @@
 var a 
 
 class X:
-        var b 
+    var b 
 
     
     var c 
@@ -9,6 +9,6 @@ class X:
 var d 
 
 class Y:
-        var e 
+    var e 
 
 var f 

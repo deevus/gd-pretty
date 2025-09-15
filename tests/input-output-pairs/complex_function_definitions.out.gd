@@ -1,21 +1,15 @@
 class X:
-        func foo():
-                pass
-
+    func foo():
+        pass
     func bar(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb):
-                pass
-
+        pass
     func baz(, ):
-                pass
-
+        pass
     func bax(a, ):
-                pass
-
+        pass
     func bac(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb:int):
-                pass
-
+        pass
     func bav(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, ):
-                pass
-
+        pass
     func bab(aaaaaaaaaaaaaaaaaaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbbbbb, ccccccccccccccccccccc, ddddddddddddddd, ):
-                pass
+        pass

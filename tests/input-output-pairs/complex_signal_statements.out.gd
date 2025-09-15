@@ -1,5 +1,5 @@
 class X:
-        signal a(x, y)
+    signal a(x, y)
 
     signal b(aaaaaaaa, bbbbbbbbb, ccccccccc, dddddddd, eeeeeeee, ffffffff, ggggggggg, hhhhhhhh, iiiiiiii, jjjjjjjjjjj)
 

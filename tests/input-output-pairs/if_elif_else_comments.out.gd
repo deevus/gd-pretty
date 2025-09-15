@@ -1,5 +1,5 @@
 class X:
-        func foo():
+    func foo():
         for i in [1]:
 			if i:
 			# aaa

@@ -70,4 +70,4 @@ var p10 :						# inline i
 func __get():
     return 1
 func __set(v):
-        pass
+    pass

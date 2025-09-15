@@ -1,5 +1,5 @@
 class X:
-        func foo():
+    func foo():
         var a = 1 > 2
 
         var c = [1, 2] in [[1, 2], [3]]

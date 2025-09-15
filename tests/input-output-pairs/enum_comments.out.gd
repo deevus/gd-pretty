@@ -1,5 +1,5 @@
 class X:
-         # xxx
+     # xxx
 
      # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 

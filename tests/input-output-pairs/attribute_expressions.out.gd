@@ -1,5 +1,5 @@
 class X:
-        func foo(xxxxxxxxxxx):
+    func foo(xxxxxxxxxxx):
         var x = xxxxxxxxxxx.y.z 
 
         var y = xxxxxxxxxxx.yyyyyyyyyyyy.zzzzzzzzzzz.qqqqqqqqqqqqq.wwwwwwwwww.eeeeeeeeeeee.rrrrrrrrrrrrr.tttttt 

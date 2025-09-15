@@ -1,9 +1,7 @@
 func foo(x):
-        pass
-
+    pass
 func bar(x, y):
-        pass
-
+    pass
 func baz():
     foo(func(): pass)
     bar(func(): pass,func(): pass)

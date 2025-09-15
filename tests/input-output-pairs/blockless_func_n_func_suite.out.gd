@@ -1,7 +1,7 @@
 var a 
 
 class X:
-        func foo():
+    func foo():
         var b 
 
         
@@ -10,7 +10,7 @@ class X:
 var d 
 
 class Y:
-        func bar():
+    func bar():
         var e 
 
         
