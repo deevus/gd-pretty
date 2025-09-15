@@ -1,3 +1,6 @@
+// Scoped logger for GdWriter
+const log = std.log.scoped(.gdwriter);
+
 const GdWriter = @This();
 
 pub const Error = error{
@@ -5,10 +8,12 @@ pub const Error = error{
     UnexpectedNodeType,
     MissingRequiredChild,
     InvalidNodeStructure,
-    NoSpaceLeft,
+    MaxWidthExceeded,
 } || Writer.Error;
 
-out: *Writer,
+writer: *Writer,
+bytes_written: u64 = 0,
+current_line_start: u64 = 0,
 context: Context,
 
 const Options = struct {
@@ -18,7 +23,9 @@ const Options = struct {
 
 pub fn init(options: Options) GdWriter {
     return GdWriter{
-        .out = options.writer,
+        .writer = options.writer,
+        .bytes_written = 0,
+        .current_line_start = 0,
         .context = options.context orelse .{},
     };
 }
@@ -29,19 +36,97 @@ pub const IndentOptions = struct {
 };
 
 fn writeIndent(self: *GdWriter, options: IndentOptions) Error!void {
+    log.debug("writeIndent: by={}, new_line={}, current_indent={}, line_width={}", .{ options.by, options.new_line, self.context.indent_level, self.getCurrentLineWidth() });
+
     if (options.by != 0) {
         self.context.indent_level += options.by;
+        log.debug("writeIndent: increased indent_level to {}", .{self.context.indent_level});
     }
 
     if (options.new_line) {
-        try self.out.writeAll("\n");
+        try self.writeNewline();
     }
 
-    try formatter.writeIndent(self.out, self.context);
+    try formatter.writeIndent(self.writer, self.context);
+    log.debug("writeIndent: completed, final_indent={}, line_width={}", .{ self.context.indent_level, self.getCurrentLineWidth() });
+}
+
+fn getCurrentLineWidth(self: *GdWriter) u32 {
+    return @intCast(self.bytes_written - self.current_line_start);
+}
+
+fn writeNewline(self: *GdWriter) !void {
+    log.debug("writeNewline: current_line_width={}, bytes_written={}", .{ self.getCurrentLineWidth(), self.bytes_written });
+
+    const bytes = try self.writer.write("\n");
+    self.bytes_written += bytes;
+    self.current_line_start = self.bytes_written;
+
+    log.debug("writeNewline: completed, new_line_start={}, bytes_written={}", .{ self.current_line_start, self.bytes_written });
 }
 
 fn writeTrimmed(self: *GdWriter, node: Node) !void {
-    try self.out.writeAll(formatter.trimWhitespace(node.text()));
+    const original_text = node.text();
+    const text = formatter.trimWhitespace(original_text);
+    log.debug("writeTrimmed: node_type={s}, original='{s}', trimmed='{s}'", .{ node.getTypeAsString(), original_text[0..@min(30, original_text.len)], text[0..@min(30, text.len)] });
+    try self.write(text, .{});
+}
+
+const WriteOptions = struct {
+    check_max_width: bool = true,
+};
+
+fn write(self: *GdWriter, text: []const u8, options: WriteOptions) Error!void {
+    _ = options; // autofix
+    const escaped_text = if (std.mem.eql(u8, text, "\n")) "\\n" else text;
+    log.debug("write: '{s}' ({} bytes), line_width={}, total_bytes={}", .{ escaped_text, text.len, self.getCurrentLineWidth(), self.bytes_written });
+
+    const bytes = try self.writer.write(text);
+    self.bytes_written += bytes;
+
+    log.debug("write: completed, new_bytes_written={}, new_line_width={}", .{ self.bytes_written, self.getCurrentLineWidth() });
+}
+
+fn isInlineComment(comment_node: Node) bool {
+    // Check if this comment appears on the same line as previous non-comment content
+    // For now, we'll use a simple heuristic: if there's a previous sibling on the same line
+
+    const comment_start = comment_node.startPoint();
+
+    // Look for a previous sibling that's not whitespace
+    var prev_sibling = comment_node.prevSibling();
+    while (prev_sibling) |sibling| {
+        const sibling_type = sibling.getTypeAsString();
+        const sibling_end = sibling.endPoint();
+
+        // Skip whitespace-only nodes
+        if (std.mem.eql(u8, sibling_type, "whitespace") or
+            std.mem.eql(u8, sibling_type, " ") or
+            std.mem.eql(u8, sibling_type, "\t"))
+        {
+            prev_sibling = sibling.prevSibling();
+            continue;
+        }
+
+        // If the previous non-whitespace sibling ends on the same line as the comment starts,
+        // then this is an inline comment
+        if (sibling_end.row == comment_start.row) {
+            return true;
+        }
+
+        break;
+    }
+
+    return false;
+}
+
+// Check if there were blank lines in the original source between two nodes
+fn hasBlankLinesBetween(node1: Node, node2: Node) bool {
+    const end_point = node1.endPoint();
+    const start_point = node2.startPoint();
+
+    // If there's more than one line difference, there must be blank lines
+    return (start_point.row - end_point.row) > 1;
 }
 
 pub fn writeAttribute(self: *GdWriter, node: Node) Error!void {
@@ -56,14 +141,15 @@ pub fn writeAttribute(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeSubscript(self: *GdWriter, node: Node) Error!void {
-    try @"type".writeSubscript(node, self.out, self.context);
+    try @"type".writeSubscript(node, self.writer, self.context);
 }
 
 pub fn writeType(self: *GdWriter, node: Node) Error!void {
-    try @"type".writeType(node, self.out, self.context);
+    try @"type".writeType(node, self.writer, self.context);
 }
 
 pub fn writeIdentifier(self: *GdWriter, node: Node) Error!void {
+    log.debug("writeIdentifier: text='{s}', indent={}", .{ node.text(), self.context.indent_level });
     try self.writeTrimmed(node);
 }
 
@@ -72,6 +158,7 @@ pub fn writeCall(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
+    log.debug("writeClassDefinition: children={}, indent={}, line_width={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.getCurrentLineWidth(), self.bytes_written });
     assert(node.getTypeAsEnum(NodeType) == .class_definition);
 
     var i: u32 = 0;
@@ -82,7 +169,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
         assert(class_node.getTypeAsEnum(NodeType) == .class);
 
         try self.writeTrimmed(class_node);
-        try self.out.writeAll(" ");
+        try self.write(" ", .{});
         i += 1;
     }
 
@@ -97,11 +184,15 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
 
     // extends (optional)
     {
-        const extends_node = node.child(i).?;
-        if (extends_node.getTypeAsEnum(NodeType) == .extends_statement) {
-            try self.out.writeAll(" ");
-            try self.writeExtendsStatement(extends_node);
-            i += 1;
+        if (node.child(i)) |extends_node| {
+            if (extends_node.getTypeAsEnum(NodeType) == .extends_statement) {
+                try self.write(" ", .{});
+                try self.writeExtendsStatement(extends_node);
+                i += 1;
+            } else if (extends_node.getTypeAsEnum(NodeType) == .comment) {
+                try self.handleComment(extends_node);
+                i += 1;
+            }
         }
     }
 
@@ -111,31 +202,146 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
         assert(colon_node.getTypeAsEnum(NodeType) == .@":");
 
         try self.writeTrimmed(colon_node);
-        try self.out.writeAll("\n");
         i += 1;
     }
 
-    // body
-    {
-        const body_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(body_node.getTypeAsEnum(NodeType) == .body);
+    // Check for inline comment after colon
+    var has_inline_comment = false;
+    if (node.child(i)) |next_node| {
+        if (next_node.getTypeAsEnum(NodeType) == .comment and isInlineComment(next_node)) {
+            try self.handleComment(next_node);
+            has_inline_comment = true;
+            i += 1;
+        }
+    }
 
-        try self.writeIndent(.{ .by = 1 });
-        try self.writeBody(body_node);
-        self.context.indent_level -= 1;
+    // Write newline after colon (and inline comment if present)
+    try self.writeNewline();
+
+    // body (with comment handling)
+    {
+        var current_index = i;
+        var found_body = false;
+
+        while (current_index < node.childCount()) {
+            const child = node.child(current_index) orelse break;
+
+            const child_type = child.getTypeAsEnum(NodeType) orelse {
+                log.debug("Unknown node type: '{s}', checking if comment", .{child.getTypeAsString()});
+                if (child.getTypeAsEnum(NodeType) == .comment) {
+                    try self.handleComment(child);
+                    current_index += 1;
+                    continue;
+                }
+                log.err("Expected body or comment after class declaration, got {s}", .{child.getTypeAsString()});
+                return Error.UnexpectedNodeType;
+            };
+
+            switch (child_type) {
+                .comment => {
+                    try self.handleComment(child);
+                    current_index += 1;
+                    continue;
+                },
+                .body => {
+                    log.debug("writeClassDefinition: entering body with indent_level={}", .{self.context.indent_level});
+                    // Create temporary context with increased indentation
+                    const old_indent = self.context.indent_level;
+                    self.context.indent_level += 1;
+                    try self.writeBody(child);
+                    self.context.indent_level = old_indent;
+                    log.debug("writeClassDefinition: exited body, indent_level={}", .{self.context.indent_level});
+                    found_body = true;
+                    break;
+                },
+                else => {
+                    log.err("Expected body or comment after class declaration, got {s}", .{child.getTypeAsString()});
+                    return Error.UnexpectedNodeType;
+                },
+            }
+        }
+
+        if (!found_body) {
+            return Error.MissingRequiredChild;
+        }
     }
 }
 
 pub fn writeBody(self: *GdWriter, node: Node) Error!void {
+    log.debug("writeBody: children={}, indent={}, line_width={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.getCurrentLineWidth(), self.bytes_written });
     assert(node.getTypeAsEnum(NodeType) == .body);
-    var cursor = node.child(0).?.cursor();
-    try formatter.depthFirstWalk(&cursor, self.out, self.context);
+
+    // Process all children in the body
+    for (0..node.childCount()) |i| {
+        if (node.child(@intCast(i))) |child| {
+            // Check if this is a comment
+            if (child.getTypeAsEnum(NodeType) == .comment) {
+                // Check if this is an inline comment (on same line as previous statement)
+                if (isInlineComment(child)) {
+                    // Handle inline comment - it should appear on the same line as the previous statement
+                    // The previous statement should have NOT written a newline
+                    try self.handleComment(child);
+                    try self.writeNewline();
+                } else {
+                    // Standalone comment - handleComment already writes the newline
+                    // Check if we need to preserve blank lines from the original source
+                    if (i > 0) {
+                        const prev_child = node.child(@intCast(i - 1)).?;
+
+                        // Check if there were blank lines in the original source
+                        if (hasBlankLinesBetween(prev_child, child)) {
+                            // Preserve the blank line from the original
+                            try self.writeNewline();
+                        } else if (prev_child.getTypeAsEnum(NodeType) != .comment) {
+                            // Only add a newline before if the previous child was not a comment
+                            // This handles the case where we're after a non-comment statement
+                            try self.writeNewline();
+                        }
+                        // If prev was a comment and no blank lines in original, don't add extra newline
+                    }
+                    try self.handleComment(child);
+                }
+            } else {
+                // Regular statement
+                if (i > 0) {
+                    // Add newline between statements
+                    try self.writeNewline();
+                }
+                // Write proper indentation for the statement
+                try formatter.writeIndent(self.writer, self.context);
+                log.debug("writeBody: processing child {}: type={s}", .{ i, child.getTypeAsString() });
+
+                // Check if the next child is an inline comment
+                const next_child = if (i + 1 < node.childCount()) node.child(@intCast(i + 1)) else null;
+                const has_inline_comment = if (next_child) |nc|
+                    nc.getTypeAsEnum(NodeType) == .comment and isInlineComment(nc)
+                else
+                    false;
+
+                // Process the statement
+                var cursor = child.cursor();
+
+                // Save the current context to pass info about inline comments
+                const old_suppress_newline = self.context.suppress_final_newline;
+                if (has_inline_comment) {
+                    self.context.suppress_final_newline = true;
+                }
+
+                try formatter.depthFirstWalk(&cursor, self);
+
+                // Restore context
+                self.context.suppress_final_newline = old_suppress_newline;
+            }
+        }
+    }
 }
 
 pub fn writePassStatement(self: *GdWriter, node: Node) Error!void {
+    log.debug("writePassStatement: indent={}, line_width={}, bytes_written={}", .{ self.context.indent_level, self.getCurrentLineWidth(), self.bytes_written });
     assert(node.getTypeAsEnum(NodeType) == .pass_statement);
 
-    try self.out.writeAll("pass\n");
+    // Indentation is handled by writeBody, just write the statement
+    try self.write("pass", .{});
 }
 
 pub fn writeSignalStatement(self: *GdWriter, node: Node) Error!void {
@@ -145,19 +351,43 @@ pub fn writeSignalStatement(self: *GdWriter, node: Node) Error!void {
 
     // signal
     {
-        const signal_node = node.child(i).?;
-        assert(signal_node.getTypeAsEnum(NodeType) == .signal);
+        const signal_node = node.child(i) orelse return Error.MissingRequiredChild;
+        const signal_type = signal_node.getTypeAsEnum(NodeType) orelse {
+            log.debug("Unknown node type: '{s}', expected signal", .{signal_node.getTypeAsString()});
+            if (signal_node.getTypeAsEnum(NodeType) == .comment) {
+                try self.handleComment(signal_node);
+                i += 1;
+                return;
+            }
+            return Error.UnexpectedNodeType;
+        };
+
+        if (signal_type != .signal) {
+            return Error.UnexpectedNodeType;
+        }
 
         try self.writeTrimmed(signal_node);
-        try self.out.writeAll(" ");
+        try self.write(" ", .{});
 
         i += 1;
     }
 
     // identifier
     {
-        const name_node = node.child(i).?;
-        assert(name_node.getTypeAsEnum(NodeType) == .name);
+        const name_node = node.child(i) orelse return Error.MissingRequiredChild;
+        const name_type = name_node.getTypeAsEnum(NodeType) orelse {
+            log.debug("Unknown node type: '{s}', expected name", .{name_node.getTypeAsString()});
+            if (name_node.getTypeAsEnum(NodeType) == .comment) {
+                try self.handleComment(name_node);
+                i += 1;
+                return;
+            }
+            return Error.UnexpectedNodeType;
+        };
+
+        if (name_type != .name) {
+            return Error.UnexpectedNodeType;
+        }
 
         try self.writeIdentifier(name_node);
 
@@ -173,40 +403,56 @@ pub fn writeSignalStatement(self: *GdWriter, node: Node) Error!void {
         }
     }
 
-    try self.out.writeAll("\n");
+    try self.writeNewline();
 }
 
 pub fn writeParameters(self: *GdWriter, node: Node) Error!void {
+    log.debug("writeParameters: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
     assert(node.getTypeAsEnum(NodeType) == .parameters);
 
-    try self.out.writeAll("(");
+    try self.write("(", .{});
     for (0..node.childCount()) |j| {
         const param = node.child(@intCast(j)) orelse return Error.MissingRequiredChild;
-        const param_type = (param.getTypeAsEnum(NodeType)).?;
+        const param_type = param.getTypeAsEnum(NodeType) orelse {
+            log.debug("Unknown node type: '{s}', treating as comment", .{param.getTypeAsString()});
+            if (param.getTypeAsEnum(NodeType) == .comment) {
+                try self.handleComment(param);
+            } else {
+                // For non-comment unknown types, use trimmed write as fallback
+                const param_text = formatter.trimWhitespace(param.text());
+                try self.write(param_text, .{});
+            }
+            continue;
+        };
 
         const param_text = formatter.trimWhitespace(param.text());
+        log.debug("writeParameters: param[{}] type={s}, text='{s}'", .{ j, @tagName(param_type), param_text });
+
         switch (param_type) {
             .typed_parameter => {
-                try self.out.writeAll(param_text);
+                try self.write(param_text, .{});
             },
-            .@"," => try self.out.writeAll(", "),
-            .identifier => try self.out.writeAll(param_text),
+            .@"," => try self.write(", ", .{}),
+            .identifier => try self.write(param_text, .{}),
             .@"(", .@")" => continue,
-            else => std.debug.print("unknown param type: {} {s}\n", .{ param_type, param.text() }),
+            else => log.warn("unknown param type: {} {s}", .{ param_type, param.text() }),
         }
     }
-    try self.out.writeAll(")");
+    try self.write(")", .{});
 }
 
 pub fn writeExtendsStatement(self: *GdWriter, node: Node) Error!void {
     assert(node.childCount() == 2);
 
     // extends
-    try self.out.writeAll("extends ");
-    try self.out.print("{s}", .{formatter.trimWhitespace(node.child(1).?.text())});
+    try self.write("extends ", .{});
+    try self.write(formatter.trimWhitespace(node.child(1).?.text()), .{});
 }
 
 pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
+    log.debug("writeVariableStatement: children={}, indent={}, line_width={}, text='{s}'", .{ node.childCount(), self.context.indent_level, self.getCurrentLineWidth(), node.text()[0..@min(50, node.text().len)] });
+
+    var has_inline_comment = false;
     for (0..node.childCount()) |i| {
         const prev_child = if (i > 0) node.child(@intCast(i - 1)) else null;
         _ = prev_child;
@@ -214,13 +460,32 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
         const next_child = node.child(@intCast(i + 1));
 
         if (child) |c| {
-            const nt = (c.getTypeAsEnum(enums.GdNodeType)).?;
+            // Check if this is a comment
+            if (c.getTypeAsEnum(NodeType) == .comment) {
+                if (isInlineComment(c)) {
+                    try self.handleComment(c);
+                    has_inline_comment = true;
+                } else {
+                    // Standalone comment - should not happen within a variable statement
+                    try self.handleComment(c);
+                }
+                continue;
+            }
+
+            const nt = c.getTypeAsEnum(enums.GdNodeType) orelse {
+                log.debug("writeVariableStatement: unknown node type for child {}: '{s}', falling back to trimmed write", .{ i, c.getTypeAsString() });
+                try self.writeTrimmed(c);
+                continue;
+            };
 
             switch (nt) {
                 .name => {
                     const next_child_is_type = blk: {
                         if (next_child) |nc| {
-                            const nc_type = (nc.getTypeAsEnum(enums.GdNodeType)).?;
+                            const nc_type = nc.getTypeAsEnum(enums.GdNodeType) orelse {
+                                log.debug("writeVariableStatement: unknown next_child node type: '{s}'", .{nc.getTypeAsString()});
+                                break :blk false;
+                            };
 
                             if (nc_type == .@":") {
                                 break :blk true;
@@ -231,27 +496,78 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
                     };
 
                     if (next_child_is_type) {
-                        try self.out.writeAll(c.text());
+                        try self.write(c.text(), .{});
                     } else {
-                        try self.out.print("{s} ", .{c.text()});
+                        try self.write(c.text(), .{});
+                        try self.write(" ", .{});
                     }
                 },
-                else => try self.out.print("{s} ", .{c.text()}),
+                .@"var" => {
+                    try self.write("var ", .{});
+                },
+                .@"=" => {
+                    try self.write("= ", .{});
+                },
+                .binary_operator => {
+                    // Process binary expressions properly
+                    var cursor = c.cursor();
+                    try formatter.depthFirstWalk(&cursor, self);
+                },
+                else => {
+                    // For expressions and other complex nodes, traverse them properly
+                    const node_text = c.text();
+                    // Check if this might be an expression
+                    if (std.mem.indexOf(u8, node_text, "+") != null or
+                        std.mem.indexOf(u8, node_text, "-") != null or
+                        std.mem.indexOf(u8, node_text, "*") != null or
+                        std.mem.indexOf(u8, node_text, "/") != null)
+                    {
+                        var cursor = c.cursor();
+                        try formatter.depthFirstWalk(&cursor, self);
+                    } else {
+                        try self.write(c.text(), .{});
+                        try self.write(" ", .{});
+                    }
+                },
             }
         }
     }
 
-    _ = try self.out.write("\n");
+    if (!self.context.suppress_final_newline) {
+        try self.writeNewline();
+    }
 }
 
 pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
+    log.debug("writeFunctionDefinition: children={}, indent={}, line_width={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.getCurrentLineWidth(), self.bytes_written });
+
     var i: u32 = 0;
+
+    // Log all children for debugging
+    for (0..node.childCount()) |idx| {
+        if (node.child(@intCast(idx))) |child| {
+            const trimmed_text = std.mem.trim(u8, child.text(), " \t\n\r");
+            log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(20, trimmed_text.len)] });
+        }
+    }
+
+    // static (optional)
+    if (node.child(i).?.getTypeAsEnum(NodeType) == .static_keyword) {
+        log.debug("writeFunctionDefinition: found static keyword at index {}", .{i});
+        try self.write("static ", .{});
+        i += 1;
+    }
 
     // func keyword
     {
         const func_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(func_node.getTypeAsEnum(NodeType) == .func);
-        try self.out.writeAll("func");
+        log.debug("writeFunctionDefinition: checking func node at index {}, got type={s}", .{ i, func_node.getTypeAsString() });
+        if (func_node.getTypeAsEnum(NodeType) != .func) {
+            log.err("Expected func node at index {}, got {s}", .{ i, func_node.getTypeAsString() });
+            return Error.UnexpectedNodeType;
+        }
+
+        try self.write("func", .{});
     }
     i += 1;
 
@@ -259,8 +575,8 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     {
         if (node.child(i).?.getTypeAsEnum(NodeType) == .name) {
             const text = formatter.trimWhitespace(node.child(i).?.text());
-            try self.out.writeAll(" ");
-            try self.out.writeAll(text);
+            try self.write(" ", .{});
+            try self.write(text, .{});
             i += 1;
         }
     }
@@ -270,23 +586,26 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
         const params_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(params_node.getTypeAsEnum(NodeType) == .parameters);
 
-        try self.out.writeAll("(");
+        try self.write("(", .{});
         for (0..params_node.childCount()) |j| {
             const param = params_node.child(@intCast(j)) orelse return Error.MissingRequiredChild;
-            const param_type = (param.getTypeAsEnum(NodeType)).?;
+            const param_type = param.getTypeAsEnum(NodeType) orelse {
+                log.warn("unknown param type: {s} {s}", .{ param.getTypeAsString(), param.text()[0..@min(20, param.text().len)] });
+                continue;
+            };
 
             const param_text = formatter.trimWhitespace(param.text());
             switch (param_type) {
                 .typed_parameter => {
-                    try self.out.writeAll(param_text);
+                    try self.write(param_text, .{});
                 },
-                .@"," => try self.out.writeAll(", "),
-                .identifier => try self.out.writeAll(param_text),
+                .@"," => try self.write(", ", .{}),
+                .identifier => try self.write(param_text, .{}),
                 .@"(", .@")" => continue,
-                else => std.debug.print("unknown param type: {} {s}\n", .{ param_type, param.text() }),
+                else => log.warn("unknown param type: {} {s}", .{ param_type, param.text() }),
             }
         }
-        try self.out.writeAll(")");
+        try self.write(")", .{});
     }
     i += 1;
 
@@ -302,8 +621,8 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
             assert(type_node.getTypeAsEnum(NodeType) == .type);
             i += 1;
 
-            try self.out.writeAll(" -> ");
-            try @"type".writeType(type_node, self.out, self.context);
+            try self.write(" -> ", .{});
+            try @"type".writeType(type_node, self.writer, self.context);
         }
     }
 
@@ -311,41 +630,94 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     {
         const colon_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(colon_node.getTypeAsEnum(NodeType) == .@":");
-        try self.out.writeAll(":\n");
+        try self.write(":", .{});
     }
     i += 1;
 
-    // body
-    {
-        const body_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(body_node.getTypeAsEnum(NodeType) == .body);
+    // Check for inline comment after colon
+    var has_inline_comment = false;
+    if (node.child(i)) |next_node| {
+        if (next_node.getTypeAsEnum(NodeType) == .comment and isInlineComment(next_node)) {
+            try self.handleComment(next_node);
+            has_inline_comment = true;
+            i += 1;
+        }
+    }
 
-        var body_cursor = body_node.child(0).?.cursor();
-        try formatter.depthFirstWalk(&body_cursor, self.out, self.context.indent());
+    // Write newline after colon (and inline comment if present)
+    try self.writeNewline();
+
+    // body (with comment handling)
+    {
+        var current_index = i;
+        var found_body = false;
+
+        while (current_index < node.childCount()) {
+            const child = node.child(current_index) orelse break;
+
+            const child_type = child.getTypeAsEnum(NodeType) orelse {
+                log.debug("Unknown node type: '{s}', checking if comment", .{child.getTypeAsString()});
+                if (child.getTypeAsEnum(NodeType) == .comment) {
+                    try self.handleComment(child);
+                    current_index += 1;
+                    continue;
+                }
+                log.err("Expected body or comment after function signature, got {s}", .{child.getTypeAsString()});
+                return Error.UnexpectedNodeType;
+            };
+
+            switch (child_type) {
+                .comment => {
+                    try self.handleComment(child);
+                    current_index += 1;
+                    continue;
+                },
+                .body => {
+                    // Create temporary context with increased indentation
+                    const old_indent = self.context.indent_level;
+                    self.context.indent_level += 1;
+                    try self.writeBody(child);
+                    self.context.indent_level = old_indent;
+                    found_body = true;
+                    break;
+                },
+                else => {
+                    log.err("Expected body or comment after function signature, got {s}", .{child.getTypeAsString()});
+                    return Error.UnexpectedNodeType;
+                },
+            }
+        }
+
+        if (!found_body) {
+            return Error.MissingRequiredChild;
+        }
     }
 }
 
 pub fn writeReturnStatement(self: *GdWriter, node: Node) Error!void {
+    log.debug("writeReturnStatement: children={}, indent={}, text='{s}'", .{ node.childCount(), self.context.indent_level, node.text()[0..@min(40, node.text().len)] });
+
     const return_node = node.child(0) orelse return Error.MissingRequiredChild;
     assert(return_node.getTypeAsEnum(NodeType) == .@"return");
-    try self.out.writeAll("return ");
+    try self.write("return ", .{});
 
     var next_node = node.child(1) orelse return;
+    log.debug("writeReturnStatement: processing return value of type {s}", .{next_node.getTypeAsString()});
 
     var cursor = next_node.cursor();
-    try formatter.depthFirstWalk(&cursor, self.out, self.context);
+    try formatter.depthFirstWalk(&cursor, self);
 }
 
 pub fn writeClassNameStatement(self: *GdWriter, node: Node) Error!void {
     const class_name_node = node.child(0) orelse return Error.MissingRequiredChild;
     assert(class_name_node.getTypeAsEnum(NodeType) == .class_name);
     try self.writeTrimmed(class_name_node);
-    try self.out.writeAll(" ");
+    try self.write(" ", .{});
 
     const name_node = node.child(1) orelse return Error.MissingRequiredChild;
     assert(name_node.getTypeAsEnum(NodeType) == .name);
     try self.writeTrimmed(name_node);
-    try self.out.writeAll("\n");
+    try self.writeNewline();
 }
 
 // ============================================================================
@@ -354,8 +726,20 @@ pub fn writeClassNameStatement(self: *GdWriter, node: Node) Error!void {
 
 // Critical Language Features
 pub fn writeSource(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement source node handling (root of the AST)
-    try self.writeTrimmed(node);
+    log.debug("writeSource: children={}, indent={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.bytes_written });
+
+    // Source node is the root - need to traverse its children
+    var i: u32 = 0;
+    while (i < node.childCount()) : (i += 1) {
+        if (i > 0) {
+            try self.writeNewline();
+        }
+        const child = node.child(i).?;
+        log.debug("writeSource: processing child {}: node_type={s}", .{ i, child.getTypeAsString() });
+        var cursor = child.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+    }
+    log.debug("writeSource: completed, bytes_written={}", .{self.bytes_written});
 }
 
 pub fn writeConstStatement(self: *GdWriter, node: Node) Error!void {
@@ -481,8 +865,82 @@ pub fn writeFalse(self: *GdWriter, node: Node) Error!void {
 
 // Expressions and Operations
 pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement binary operations with proper spacing
-    try self.writeTrimmed(node);
+    log.debug("writeBinaryOperator: children={}, current_width={}, max_width={}, text='{s}'", .{ node.childCount(), self.getCurrentLineWidth(), self.context.max_width, node.text()[0..@min(60, node.text().len)] });
+
+    // Binary expressions have structure: left_expr operator right_expr
+    // assert(node.childCount() == 3);
+
+    // Try single-line format first
+    self.writeBinaryOperatorNormal(node) catch |err| switch (err) {
+        Error.MaxWidthExceeded => {
+            log.debug("writeBinaryOperator: switching to multiline due to MaxWidthExceeded", .{});
+            // Fallback to multiline format
+            return self.writeBinaryOperatorMultiline(node);
+        },
+        else => return err,
+    };
+}
+
+fn writeBinaryOperatorNormal(self: *GdWriter, node: Node) Error!void {
+    const left = node.child(0).?;
+    const op = node.child(1).?;
+    const right = node.child(2).?;
+
+    log.debug("writeBinaryOperatorNormal: left='{s}', op='{s}', right='{s}'", .{ left.text()[0..@min(20, left.text().len)], op.text(), right.text()[0..@min(20, right.text().len)] });
+
+    // Check total width that would be consumed by this entire binary expression
+    const full_text = node.text();
+    const current_width = self.getCurrentLineWidth();
+    const total_width = current_width + full_text.len;
+
+    log.debug("writeBinaryOperatorNormal: current_width={}, expression_len={}, total_width={}, max_width={}", .{ current_width, full_text.len, total_width, self.context.max_width });
+
+    // If the entire expression would exceed the limit, trigger multiline mode
+    if (total_width > self.context.max_width) {
+        log.debug("writeBinaryOperatorNormal: triggering multiline format due to width exceeded", .{});
+        return Error.MaxWidthExceeded;
+    }
+
+    // Use unchecked writes since we've already verified the total width
+    // Write left operand
+    var cursor = left.cursor();
+    try formatter.depthFirstWalk(&cursor, self);
+
+    // Write operator with spaces
+    try self.write(" ", .{});
+    try self.write(op.text(), .{});
+    try self.write(" ", .{});
+
+    // Write right operand
+    cursor = right.cursor();
+    try formatter.depthFirstWalk(&cursor, self);
+}
+
+fn writeBinaryOperatorMultiline(self: *GdWriter, node: Node) !void {
+    const left = node.child(0).?;
+    const op = node.child(1).?;
+    const right = node.child(2).?;
+
+    log.debug("writeBinaryOperatorMultiline: formatting as multiline, indent={}", .{self.context.indent_level});
+
+    // Write left operand
+    var cursor = left.cursor();
+    try formatter.depthFirstWalk(&cursor, self);
+
+    // Write operator without trailing space
+    try self.write(" ", .{});
+    try self.write(op.text(), .{});
+
+    // Newline and indented right operand
+    try self.writeNewline();
+    try self.writeIndent(.{ .new_line = false });
+    try self.writeIndent(.{ .new_line = false }); // Double indent for continuation
+    log.debug("writeBinaryOperatorMultiline: after indentation, line_width={}", .{self.getCurrentLineWidth()});
+
+    // Write right operand
+    cursor = right.cursor();
+    try formatter.depthFirstWalk(&cursor, self);
+    log.debug("writeBinaryOperatorMultiline: completed multiline format", .{});
 }
 
 pub fn writeComparisonOperator(self: *GdWriter, node: Node) Error!void {
@@ -619,8 +1077,23 @@ pub fn writeClass(self: *GdWriter, node: Node) Error!void {
 
 // Utility Methods
 pub fn writeComment(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement comment preservation with proper spacing
-    try self.writeTrimmed(node);
+    // Delegate to handleComment for consistent comment processing
+    try self.handleComment(node);
+}
+
+pub fn handleComment(self: *GdWriter, comment_node: Node) Error!void {
+    assert(comment_node.getTypeAsEnum(NodeType) == .comment);
+
+    if (isInlineComment(comment_node)) {
+        try self.write(" ", .{}); // space before inline comment
+        try self.writeTrimmed(comment_node);
+        // Don't write newline for inline comments - let the caller handle it
+    } else {
+        // Standalone comment - preserve indentation
+        try formatter.writeIndent(self.writer, self.context);
+        try self.writeTrimmed(comment_node);
+        try self.writeNewline();
+    }
 }
 
 pub fn writeName(self: *GdWriter, node: Node) Error!void {
@@ -751,7 +1224,8 @@ pub fn writeColonEquals(self: *GdWriter, node: Node) Error!void {
 
 const std = @import("std");
 const assert = std.debug.assert;
-const Writer = std.io.Writer;
+const Writer = std.Io.Writer;
+const testing = std.testing;
 
 const tree_sitter = @import("tree-sitter");
 const Node = tree_sitter.TSNode;
@@ -763,3 +1237,31 @@ const formatter = @import("formatter.zig");
 const attribute = @import("attribute.zig");
 const @"type" = @import("type.zig");
 const Context = @import("Context.zig");
+
+// ============================================================================
+// UNIT TESTS
+// ============================================================================
+
+test "handleComment - method exists" {
+    // Test that the function signature is correct
+    const has_handle_comment = @hasDecl(GdWriter, "handleComment");
+    try testing.expect(has_handle_comment);
+}
+
+test "isInlineComment - function signature" {
+    // Test that the isInlineComment function exists and has the right signature
+    const has_is_inline_comment = @hasDecl(@This(), "isInlineComment");
+    try testing.expect(has_is_inline_comment);
+}
+
+test "error handling - unknown node types graceful fallback" {
+    // Verify that we have improved error handling patterns
+    // The actual behavior is tested through the methods that use these patterns
+
+    // Test that our error types are available
+    try testing.expect(@hasDecl(GdWriter, "Error"));
+
+    // Test that UnexpectedNodeType error exists in the error set
+    const error_value: GdWriter.Error = GdWriter.Error.UnexpectedNodeType;
+    try testing.expect(error_value == GdWriter.Error.UnexpectedNodeType);
+}

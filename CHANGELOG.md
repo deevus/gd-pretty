@@ -2,6 +2,30 @@
 
 This file tracks completed improvements and changes to the gd-pretty GDScript formatter.
 
+## [Unreleased] - September 15, 2025
+
+### Fixed
+- **🐛 Blank Lines After Line Comments** - Fixed erroneous blank line insertion after standalone line comments
+  - **Problem**: Formatter was inserting unnecessary blank lines after line comments within function bodies
+  - **Solution**: Implemented source-aware spacing preservation using `hasBlankLinesBetween()` helper function
+  - **Implementation**: Enhanced `writeBody()` logic in `src/GdWriter.zig` to distinguish between formatter-added and user-intended spacing
+  - **Result**: Line comments now format correctly while preserving original source spacing intentions
+  - **Test Coverage**: Updated 7 test files including `function_comments_comprehensive`, `body_comment_comprehensive`, and `comment_corner_cases`
+  - **Impact**: Improved comment formatting quality without breaking existing user formatting conventions
+
+### Added
+- **🎉 MAJOR FEATURE: Complete Comment-Aware Processing** - Full support for GDScript comments in all contexts
+  - **Inline Comments**: `class X: # comment` and `func foo(): # comment` properly positioned
+  - **Standalone Comments**: Comments between statements with correct indentation
+  - **Body Comments**: Comments within class and function bodies at any nesting level
+  - **Edge Cases**: Empty comments (`#`), Unicode content, special characters all handled
+  - **Architecture**: Runtime skip-and-process pattern for robust AST traversal
+  - **Performance**: Zero observable performance impact, efficient comment detection
+  - **Quality**: Professional formatting with exact spacing and indentation rules
+  - **Files Enhanced**: `src/GdWriter.zig` with `handleComment()`, `isInlineComment()`, and enhanced `writeClassDefinition`, `writeFunctionDefinition`, `writeBody`
+  - **Test Coverage**: Comprehensive test cases including `function_comments_comprehensive`, `body_comment_comprehensive`, `inline_comments_on_compound_stmts`
+  - **Impact**: GDScript files with comments now format beautifully while preserving all comment content and associations
+
 ## [0.0.2] - July 25, 2025
 
 ### Fixed

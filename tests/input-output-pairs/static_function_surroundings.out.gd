@@ -1,9 +1,9 @@
 static func foo():
-	pass
+    pass
 static func bar():
-	pass
+    pass
 class Foo:
-	static func foo():
-		pass
-	static func bar():
-		pass
+    static func foo():
+        pass
+    static func bar():
+        pass

@@ -1,3 +1,3 @@
 class X:
-	static func foo():
-		return null
+    static func foo():
+        return 

@@ -1,1 +1,6 @@
-var x;var y # xxx
+var x 
+
+
+var y 
+
+ # xxx

@@ -6,6 +6,12 @@ const TSParser = ts.TSParser;
 const Context = @import("Context.zig");
 const enums = @import("enums.zig");
 const formatter = @import("formatter.zig");
+const logging = @import("logging.zig");
+
+// Override std.log with our custom logging function
+pub const std_options: std.Options = .{
+    .logFn = logging.logFn,
+};
 
 const GdNodeType = enums.GdNodeType;
 
@@ -15,6 +21,7 @@ const version = "0.0.2";
 var config = struct {
     files: []const []const u8 = &.{},
     version: bool = false,
+    log_file: ?[]const u8 = null,
     allocator: std.mem.Allocator = undefined,
 }{};
 
@@ -46,6 +53,11 @@ pub fn main() !void {
                     .help = "show version information",
                     .value_ref = r.mkRef(&config.version),
                 },
+                .{
+                    .long_name = "log-file",
+                    .help = "path to debug log file (enables debug logging)",
+                    .value_ref = r.mkRef(&config.log_file),
+                },
             }),
             .target = cli.CommandTarget{
                 .action = cli.CommandAction{ .positional_args = cli.PositionalArgs{
@@ -66,13 +78,20 @@ pub fn main() !void {
 }
 
 fn formatFiles() !void {
+    // Initialize logging system
+    try logging.init(config.allocator, config.log_file, .{ .truncate = true });
+    defer logging.deinit();
+
     if (config.version) {
-        try printMessageAndExit("gd-pretty {s}\n", .{version});
+        try logging.printMessageAndExit("gd-pretty {s}\n", .{version});
     }
+
+    std.log.info("gd-pretty {s} starting", .{version});
+    std.log.debug("Processing {} files", .{config.files.len});
 
     // Handle positional arguments - zig-cli should populate config.files
     if (config.files.len == 0) {
-        try printErrorAndExit(
+        try logging.printErrorAndExit(
             "Error: no files provided\n\nUSAGE: gd-pretty [OPTIONS] <files...>\n\nRun 'gd-pretty --help' for more information.\n",
             .{},
         );
@@ -84,7 +103,7 @@ fn formatFiles() !void {
     const ts_gdscript = tree_sitter_gdscript();
     const success = ts_parser.setLanguage(@ptrCast(ts_gdscript));
     if (!success) {
-        try printErrorAndExit("Error: failed to load GDScript grammar\n", .{});
+        try logging.printErrorAndExit("Error: failed to load GDScript grammar\n", .{});
     }
 
     var arena = std.heap.ArenaAllocator.init(config.allocator);
@@ -100,49 +119,28 @@ fn formatFiles() !void {
 
     for (config.files) |path| {
         const file = std.fs.cwd().openFile(path, .{}) catch |err| {
-            try printErrorAndExit("Error: failed to open file '{s}': {}\n", .{ path, err });
+            try logging.printErrorAndExit("Error: failed to open file '{s}': {}\n", .{ path, err });
         };
         defer file.close();
 
         var tree = ts_parser.parseFile(arena_allocator, file) catch |err| {
-            try printErrorAndExit("Error: failed to parse file '{s}': {}\n", .{ path, err });
+            try logging.printErrorAndExit("Error: failed to parse file '{s}': {}\n", .{ path, err });
         };
         defer tree.deinit();
 
         const root_node = tree.rootNode();
         var cursor = root_node.cursor();
 
-        formatter.depthFirstWalk(&cursor, writer, .{}) catch |err| {
-            try printErrorAndExit("Error: failed to format file '{s}': {}\n", .{ path, err });
+        var gd_writer = @import("GdWriter.zig").init(.{
+            .writer = writer,
+            .context = .{},
+        });
+
+        formatter.depthFirstWalk(&cursor, &gd_writer) catch |err| {
+            try logging.printErrorAndExit("Error: failed to format file '{s}': {}\n", .{ path, err });
         };
         try writer.flush();
     }
-}
-
-fn printMessageAndExit(comptime fmt: []const u8, args: anytype) !noreturn {
-    var stdout_file = std.fs.File.stdout();
-    defer stdout_file.close();
-
-    var buf: [128]u8 = undefined;
-    var stdout_writer = stdout_file.writer(&buf);
-    var w = &stdout_writer.interface;
-    try w.print(fmt, args);
-    try w.flush();
-
-    std.process.exit(0);
-}
-
-fn printErrorAndExit(comptime fmt: []const u8, args: anytype) !noreturn {
-    var stderr_file = std.fs.File.stderr();
-    defer stderr_file.close();
-
-    var buf: [128]u8 = undefined;
-    var stderr_writer = stderr_file.writer(&buf);
-    var w = &stderr_writer.interface;
-    try w.print(fmt, args);
-    try w.flush();
-
-    std.process.exit(1);
 }
 
 test "input output pairs" {
@@ -168,6 +166,8 @@ test "input output pairs" {
         if (entry.kind != .file) continue;
 
         if (std.mem.endsWith(u8, entry.name, ".in.gd")) {
+            std.debug.print("Processing input file: {s}\n", .{entry.name});
+
             const in_file = try dir.openFile(entry.name, .{});
             defer in_file.close();
 
@@ -183,7 +183,12 @@ test "input output pairs" {
             var tree = try ts_parser.parseFile(allocator, in_file);
             var cursor = tree.rootNode().cursor();
 
-            try formatter.depthFirstWalk(&cursor, writer, .{});
+            var gd_writer = @import("GdWriter.zig").init(.{
+                .writer = writer,
+                .context = .{},
+            });
+
+            try formatter.depthFirstWalk(&cursor, &gd_writer);
             try writer.flush();
         }
     }

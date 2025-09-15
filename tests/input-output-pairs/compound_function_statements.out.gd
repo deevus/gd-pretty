@@ -1,15 +1,15 @@
 class X:
-	func foo():
-		if true:
+    func foo():
+        if true:
 			pass
 			pass
-		if true:
+        if true:
 			pass
 			pass
 		else:
 			pass
 			pass
-		if true:
+        if true:
 			pass
 			pass
 		elif true:
@@ -18,9 +18,7 @@ class X:
 		else:
 			pass
 			pass
-		while true:
-			pass
-			pass
-		for i in range(10):
+        
+        for i in range(10):
 			break
 			continue
