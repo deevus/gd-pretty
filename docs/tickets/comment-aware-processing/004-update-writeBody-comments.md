@@ -36,6 +36,31 @@ Enhance the `writeBody` method to handle comments that can appear between any st
 - [ ] Maintains proper nesting and indentation levels
 - [ ] No conflicts with existing statement processing
 
+#### Comprehensive Body Comment Test Cases
+- [ ] **Comments at body start**: Comments as first elements in class/function bodies
+- [ ] **Comments between statements**: Comments interspersed with variable declarations, expressions
+- [ ] **Comments at body end**: Comments as last elements before closing structure
+- [ ] **Multiple consecutive comments**: Comment blocks within bodies
+- [ ] **Mixed comment patterns**: Combination of inline and standalone comments in same body
+- [ ] **Empty comments**: Comments with no content (`#`) within bodies
+- [ ] **Comments with special content**: Unicode, symbols, code examples within comments
+
+#### Body-Specific Output Quality Validation
+- [ ] **Consistent indentation**: Comments indented to match their context level
+- [ ] **Statement separation**: Proper newlines between comments and statements
+- [ ] **Indentation preservation**: Statement indentation unaffected by comment processing
+- [ ] **Comment-statement association**: Clear visual association between comments and related code
+- [ ] **Nested structure support**: Comments work correctly in deeply nested bodies
+- [ ] **Content preservation**: All comment text preserved exactly as written
+
+#### Advanced Integration Scenarios
+- [ ] **Class bodies with mixed content**: Classes containing properties, methods, and comments
+- [ ] **Function bodies with complex logic**: Functions with loops, conditionals, and comments
+- [ ] **Nested class/function combinations**: Comments in methods within classes
+- [ ] **Variable declaration comments**: Comments near variable assignments and declarations
+- [ ] **Control flow comments**: Comments within if/for/while statement bodies
+- [ ] **Multi-level nesting**: Comments at various indentation levels in deeply nested structures
+
 ## Implementation Notes
 
 ### Current writeBody Structure
@@ -139,3 +164,28 @@ Small to Medium (1 day)
 - [ ] Proper indentation maintained throughout
 - [ ] Integration with existing `writeBody` fixes preserved
 - [ ] Code compiles without warnings
+
+### Enhanced Body Comment Validation
+- [ ] **Multi-level indentation correctness**: Comments at all nesting levels properly indented
+- [ ] **Statement flow preservation**: Comments don't disrupt statement processing or formatting
+- [ ] **Content integrity**: All comment content preserved without modification
+- [ ] **Visual formatting quality**: Clear separation and association between comments and code
+- [ ] **Edge case handling**: Empty comments, special characters, very long comments
+
+### Complex Scenario Testing
+- [ ] **Large body structures**: Bodies with many statements and comments
+- [ ] **Deeply nested scenarios**: Multiple levels of classes, functions, and control structures
+- [ ] **Mixed content bodies**: Bodies containing various GDScript constructs with comments
+- [ ] **Performance with comment-heavy bodies**: Bodies with high comment-to-code ratios
+
+### Integration and Regression Validation
+- [ ] **Existing functionality preservation**: All current body processing features work correctly
+- [ ] **Cross-component compatibility**: Proper interaction with class and function definition processing
+- [ ] **Context management**: Indentation context correctly maintained across comment processing
+- [ ] **Error resilience**: Graceful handling of malformed or unexpected comment structures
+
+### Quality Assurance Requirements
+- [ ] **Visual inspection**: Manual review of formatted output for various body scenarios
+- [ ] **Automated testing**: Comprehensive test coverage for all comment patterns in bodies
+- [ ] **Performance validation**: No significant performance impact from comment processing
+- [ ] **Code quality**: Implementation follows project patterns and conventions

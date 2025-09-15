@@ -112,6 +112,34 @@ class Example:
 - [ ] Ensure all existing snapshot tests continue to pass
 - [ ] Add comment variations to existing complex test scenarios
 
+### Critical Output Quality Validation
+Based on current formatting issues identified in `inline_comments_on_compound_stmts.out.gd`:
+
+#### Current Formatting Problems to Address
+The current output shows critical issues that must be resolved:
+```gd
+pass
+
+class X:
+ # aaa
+        func foo():
+ # bbb
+                pass
+```
+
+**Must Fix:**
+- [ ] **Inline comment positioning**: `class X: # aaa` should keep comment on same line
+- [ ] **Proper indentation**: Comments must follow consistent indentation rules
+- [ ] **Element association**: Comments should be visually associated with correct code elements
+- [ ] **Spacing consistency**: Exact spacing requirements for inline comments
+
+#### Required Output Format Standards
+- [ ] **Inline comments**: `element: # comment` format with exactly one space before `#`
+- [ ] **Standalone comments**: Indented to match context level of surrounding code
+- [ ] **Consistent indentation**: 4 spaces per indentation level throughout
+- [ ] **No formatting artifacts**: No extra whitespace, broken lines, or misaligned elements
+- [ ] **Content preservation**: Original comment text unchanged
+
 ### Performance Validation
 Create large test files to ensure:
 - [ ] No significant slowdown in processing time
@@ -164,3 +192,21 @@ Medium (1-2 days)
 - [ ] Test files follow project conventions
 - [ ] Documentation updated with new test scenarios
 - [ ] Edge cases thoroughly tested
+
+### Critical Quality Gates
+- [ ] **Output format validation**: All test outputs match expected formatting standards exactly
+- [ ] **Visual inspection requirement**: Manual review of all generated `.out.gd` files for quality
+- [ ] **Formatting consistency**: No variations in indentation, spacing, or comment positioning
+- [ ] **Content integrity**: All comment content preserved without modification across all tests
+
+### Specific Quality Validation Requirements
+- [ ] **Inline comment formatting**: All `element: # comment` patterns correctly formatted
+- [ ] **Standalone comment indentation**: All standalone comments properly indented for context
+- [ ] **No formatting artifacts**: Zero instances of extra whitespace, broken alignment, or structural issues
+- [ ] **Regression prevention**: All existing non-comment formatting preserved perfectly
+
+### Testing Infrastructure Quality
+- [ ] **Test file organization**: Clear naming and organization of test scenarios
+- [ ] **Comprehensive coverage**: Every combination of comment types and positions tested
+- [ ] **Edge case robustness**: Extreme scenarios (empty comments, very long comments, special characters) handled
+- [ ] **Integration validation**: Comments work correctly with all GDScript language constructs

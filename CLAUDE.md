@@ -139,15 +139,12 @@ To create a new release:
    - Create GitHub release with artifacts
 
 Tags must follow semver format: `v0.1.0`, `v1.2.3`, etc.
-```
 
 ## Development Workflow
 
 - Double check GitHub workflow changes using `act`
-```
+- When debugging `gd-pretty`, use the `--log-file` option to log output to a file
 
 ## Development Guidance
 
 - DO NOT make claims about "production-ready"
-
-```

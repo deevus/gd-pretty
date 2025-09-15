@@ -3,25 +3,21 @@
 var p1 : set = __set 
 
  # inline a
-
 # b
 
 var p2 : set = __set, get = __get 
 
  # inline b
-
 # c
 
 var p3 : get = __get 
 
  # inline c
-
 # d
 
 var p4 : get = __get, set = __set 
 
  # inline d
-
 # e
 
 # f
@@ -29,25 +25,21 @@ var p4 : get = __get, set = __set
 var p5 = 1 : set = __set 
 
  # inline e
-
 # g
 
 var p6 = 1 : set = __set, get = __get 
 
  # inline f
-
 # h
 
 var p7 = 1 : get = __get 
 
  # inline g
-
 # i
 
 var p8 = 1 : get = __get, set = __set 
 
  # inline h
-
 # j
 
 var p9: int : set = __set 

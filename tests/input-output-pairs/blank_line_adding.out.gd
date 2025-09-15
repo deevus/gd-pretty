@@ -21,12 +21,12 @@ class X:
     class Y:
                         pass
 
-                # xxx
+        # xxx
 
     func baz():
                 pass
 
-        # yyy
+    # yyy
 
     func bat():
                 pass

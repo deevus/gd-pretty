@@ -1,19 +1,13 @@
 class X:
-        
-     # xxx
+         # xxx
 
-    
      # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-    
     
      # ddd
 
-    
      # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-    
      # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-    
      # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

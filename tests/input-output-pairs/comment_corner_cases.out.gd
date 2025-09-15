@@ -2,26 +2,26 @@ class X:
         func foo():
                 pass
 
-        # aaaa # bbb
+    # aaaa # bbb
 
     func bar():
-                # xxx
+        # xxx
 
         var x = '##' 
 
-                # yyy
+        # yyy
 
         var y = "##" 
 
-                # zzz
+        # zzz
 
-                # """ '''
+        # """ '''
 
         var z = """
 		#""" 
 
-                # qqq
+        # qqq
 
         var w 
 
-                # www
+        # www

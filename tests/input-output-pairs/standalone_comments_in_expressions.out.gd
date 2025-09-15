@@ -17,13 +17,13 @@ signal s(a, b)
 # ) var x
 
 func foo():
-        # aaa
+    # aaa
 
     var x = [1,2				# bbb
 	# ccc
 	] 
 
-        # ddd
+    # ddd
 
     var y = [
 		# xxx
@@ -42,7 +42,7 @@ func foo():
 	} 
 
 func bar(a, b):
-        # rr4
+    # rr4
 
         pass
 

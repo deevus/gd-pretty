@@ -1,6 +1,5 @@
 @tool
  # inline a
-
 # a
 
 extends Node
@@ -14,13 +13,11 @@ var a
 
 @onready
  # inline b
-
 # e
 
 var b 
 
  # inline c
-
 # f
 
 @onready
@@ -28,7 +25,6 @@ var b
 
 @export_range(1, 100, 1, "or_greater")
  # inline d
-
 # h
 
 var c: int = 50 
@@ -37,17 +33,14 @@ var c: int = 50
 
 class Foo:
         extends Node
-        # j
+    # j
 
-    @onready var d 
+    @onready var d  # inline e
 
-     # inline e
+    # k
 
-        # k
+    @onready # inline f
 
-    @onready
-     # inline f
-
-        # l
+    # l
 
     var e 

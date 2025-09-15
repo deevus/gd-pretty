@@ -1,19 +1,17 @@
 class X:
-            # aaa
+        # aaa
 
         pass
 
     var x 
 
-        # bbb
+    # bbb
 
     var y 
 
-    var z 
+    var z  # ccc
 
-     # ccc
-
-        # ddd
+    # ddd
 
     var q 
 

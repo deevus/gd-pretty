@@ -7,7 +7,6 @@ class_name Aclassname
 	"res://aaaaaaaaaaaaa/bbbbbbbbbbbbbbb/cccccccccccc/ddddddddddd/eeeeeeeeeeeeeee/ffffffffff.tres" # inline b
 )
  # inline c
-
 # b
 
 # c
@@ -16,13 +15,11 @@ class_name Aclassname
 	"Aaaaaaaaaaa", "Bbbbbbbbb", "Cccccccc", "Ddddddd", "Eeeeee", "Ffffffffff", "Gggggggggg" # inline e
 )
  # inline f
-
 # d
 
 var a 
 
  # inline g
-
 # e
 
 # f
@@ -42,7 +39,6 @@ var a
 	"Hhhhhhhhh"
 )
  # inline k
-
 # h
 
 var b 

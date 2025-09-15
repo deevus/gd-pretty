@@ -27,15 +27,15 @@ func foo():
 
     var x13b = func(): const foo:=1 
 
-        # TODO: fix
+    # TODO: fix
 
-        # var x14 = func(): if true: pass
+    # var x14 = func(): if true: pass
 
-        # var x15 = func(): while false: pass
+    # var x15 = func(): while false: pass
 
-        # var x16 = func(): for x in [1]: pass
+    # var x16 = func(): for x in [1]: pass
 
-        # var x17 = func(): for x : int in [1]: pass
+    # var x17 = func(): for x : int in [1]: pass
 
         pass
 

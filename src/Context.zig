@@ -7,6 +7,7 @@ indent_str: []const u8 = "    ",
 indent_size: u32 = 4,
 indent_type: IndentType = .spaces,
 max_width: u32 = 100,
+suppress_final_newline: bool = false,
 
 pub fn indent(self: Context) Context {
     return .{
@@ -15,6 +16,7 @@ pub fn indent(self: Context) Context {
         .indent_size = self.indent_size,
         .indent_type = self.indent_type,
         .max_width = self.max_width,
+        .suppress_final_newline = self.suppress_final_newline,
     };
 }
 
@@ -25,5 +27,6 @@ pub fn deindent(self: Context) Context {
         .indent_size = self.indent_size,
         .indent_type = self.indent_type,
         .max_width = self.max_width,
+        .suppress_final_newline = self.suppress_final_newline,
     };
 }

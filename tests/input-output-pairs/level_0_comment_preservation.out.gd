@@ -1,9 +1,9 @@
 func foo():
-        # aaa
+    # aaa
 
     var x 
 
-        # bbb
+    # bbb
 
     if true:
 # ccc

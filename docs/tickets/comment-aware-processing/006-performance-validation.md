@@ -35,11 +35,28 @@ Measure and validate the performance impact of the new comment-aware processing 
 - [ ] Verify memory usage scales linearly with file size
 - [ ] Test with multiple large files processed sequentially
 
+#### Enhanced Memory Testing from Comprehensive Testing Requirements
+- [ ] **Arena allocator efficiency**: Validate efficient memory allocation patterns for comment processing
+- [ ] **Memory pressure scenarios**: Test with limited memory conditions
+- [ ] **Large comment content**: Test memory usage with very long individual comments
+- [ ] **Comment density impact**: Measure memory scaling with high comment-to-code ratios
+- [ ] **Multiple file processing**: Sequential processing of many comment-heavy files
+
 ### 5. Edge Case Performance
 - [ ] Files with thousands of consecutive comments
 - [ ] Files with very long individual comments
 - [ ] Files with comments containing special characters or unicode
 - [ ] Stress testing with malformed comment structures
+
+#### Integration with Comprehensive Testing Scenarios
+From ticket #005, validate performance with these specific comment scenarios:
+- [ ] **Inline comments after declarations**: Performance impact of `class X: # comment` patterns
+- [ ] **Standalone comments between statements**: Processing cost of comment blocks
+- [ ] **Multiple consecutive comments**: Performance scaling with comment density
+- [ ] **Mixed inline and standalone**: Cost of comment classification and processing
+- [ ] **Complex nested structures**: Performance with deeply nested comments
+- [ ] **Empty comment handling**: Overhead of processing comments with no content
+- [ ] **Special character processing**: Unicode and symbol processing performance
 
 ## Implementation Notes
 
@@ -185,3 +202,21 @@ Medium (1-2 days)
 - [ ] Performance characteristics documented
 - [ ] No performance regressions in existing functionality
 - [ ] Optimization implemented if needed to meet thresholds
+
+### Enhanced Performance Validation
+- [ ] **Baseline comparison**: Documented performance metrics before and after comment implementation
+- [ ] **Comment processing overhead**: Specific measurement of comment-related processing costs
+- [ ] **Scalability validation**: Linear scaling confirmed for comment density and file size
+- [ ] **Memory efficiency**: Arena allocator usage optimized for comment processing patterns
+
+### Integration Performance Testing
+- [ ] **Cross-component performance**: Comment processing doesn't slow down class/function/body processing
+- [ ] **Real-world scenario testing**: Performance with typical GDScript project files
+- [ ] **Edge case performance**: Acceptable performance even with extreme comment patterns
+- [ ] **Continuous monitoring**: Performance regression detection for future changes
+
+### Quality Performance Metrics
+- [ ] **Output correctness under load**: High comment density doesn't compromise formatting quality
+- [ ] **Error handling performance**: Graceful degradation with malformed inputs
+- [ ] **Resource management**: No resource leaks during extended processing sessions
+- [ ] **Platform consistency**: Similar performance characteristics across different platforms

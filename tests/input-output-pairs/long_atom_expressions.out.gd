@@ -1,6 +1,6 @@
 extends Node
 func foo():
-        # TODO: consider adding fake parenthesis
+    # TODO: consider adding fake parenthesis
 
     var cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc = ^"../Some/Stuff"
 
