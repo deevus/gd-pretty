@@ -6,7 +6,8 @@ class X:
 				[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 		var c = not not not not not not not not not not not not not not not not not not not not ! true
 		var d = true && true && true && true && true && true and true and true and true and true and true
-		var e = true || true or true or true or true or true or true or true or true or true or true or true or
+		var e = true || true or true or true or true or true or true or true or true or true or true or
+				true or
 				true or
 				true or
 				1 > 1111

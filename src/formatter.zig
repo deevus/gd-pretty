@@ -63,10 +63,6 @@ pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, gd_writer: *GdWriter) GdWriter.E
     }
 }
 
-pub fn trimWhitespace(text: []const u8) []const u8 {
-    return std.mem.trim(u8, text, &std.ascii.whitespace);
-}
-
 pub fn printTree(root: ts.TSNode, writer: anytype) !void {
     try printTreeRecursive(root, writer, 0);
 }

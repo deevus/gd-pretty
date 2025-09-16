@@ -16,7 +16,7 @@ writer: *Writer,
 bytes_written: u64 = 0,
 current_line_start: u64 = 0,
 context: Context,
-indent_writer: IndentWriter,
+whitespace_config: WhitespaceConfig,
 allocator: std.mem.Allocator,
 
 const Options = struct {
@@ -32,7 +32,7 @@ pub fn init(options: Options) GdWriter {
         .bytes_written = 0,
         .current_line_start = 0,
         .context = options.context orelse .{},
-        .indent_writer = .init(options.whitespace_config),
+        .whitespace_config = options.whitespace_config,
         .allocator = options.allocator,
     };
 }
@@ -54,7 +54,7 @@ fn writeIndent(self: *GdWriter, options: IndentOptions) Error!void {
         try self.writeNewline();
     }
 
-    try self.indent_writer.writeIndent(self.writer, self.context);
+    try self.writeIndentLevel(self.context.indent_level);
     log.debug("writeIndent: completed, final_indent={}, line_width={}", .{ self.context.indent_level, self.getCurrentLineWidth() });
 }
 
@@ -72,9 +72,27 @@ fn writeNewline(self: *GdWriter) !void {
     log.debug("writeNewline: completed, new_line_start={}, bytes_written={}", .{ self.current_line_start, self.bytes_written });
 }
 
+fn writeIndentLevel(self: *GdWriter, indent_level: u32) Error!void {
+    switch (self.whitespace_config.style) {
+        .spaces => {
+            const width = self.whitespace_config.width * indent_level;
+            for (0..width) |_| try self.writer.writeByte(' ');
+            self.bytes_written += width;
+        },
+        .tabs => {
+            for (0..indent_level) |_| try self.writer.writeByte('\t');
+            self.bytes_written += indent_level;
+        },
+    }
+}
+
+fn trimWhitespace(_: *GdWriter, text: []const u8) []const u8 {
+    return std.mem.trim(u8, text, &std.ascii.whitespace);
+}
+
 fn writeTrimmed(self: *GdWriter, node: Node) !void {
     const original_text = node.text();
-    const trimmed_text = formatter.trimWhitespace(original_text);
+    const trimmed_text = self.trimWhitespace(original_text);
 
     log.debug("writeTrimmed: node_type={s}, original='{s}', normalized='{s}'", .{ node.getTypeAsString(), original_text[0..@min(30, original_text.len)], trimmed_text[0..@min(30, trimmed_text.len)] });
     try self.write(trimmed_text, .{});
@@ -89,11 +107,9 @@ fn write(self: *GdWriter, text: []const u8, options: WriteOptions) Error!void {
     const escaped_text = if (std.mem.eql(u8, text, "\n")) "\\n" else text;
     log.debug("write: '{s}' ({} bytes), line_width={}, total_bytes={}", .{ escaped_text, text.len, self.getCurrentLineWidth(), self.bytes_written });
 
-    const whitespace = self.indent_writer.config.style;
-
     for (text) |char| {
-        if (char == '\t' and whitespace == .spaces) {
-            for (0..self.indent_writer.config.width) |_| {
+        if (char == '\t' and self.whitespace_config.style == .spaces) {
+            for (0..self.whitespace_config.width) |_| {
                 try self.writer.writeByte(' ');
                 self.bytes_written += 1;
             }
@@ -323,7 +339,7 @@ pub fn writeBody(self: *GdWriter, node: Node) Error!void {
         } else {
             // Regular statement
             // Write proper indentation for the statement
-            try self.indent_writer.writeIndent(self.writer, self.context);
+            try self.writeIndentLevel(self.context.indent_level);
             log.debug("writeBody: processing child {}: type={s}", .{ i, child.getTypeAsString() });
 
             // Check if the next child is an inline comment
@@ -435,13 +451,13 @@ pub fn writeParameters(self: *GdWriter, node: Node) Error!void {
                 try self.handleComment(param);
             } else {
                 // For non-comment unknown types, use trimmed write as fallback
-                const param_text = formatter.trimWhitespace(param.text());
+                const param_text = self.trimWhitespace(param.text());
                 try self.write(param_text, .{});
             }
             continue;
         };
 
-        const param_text = formatter.trimWhitespace(param.text());
+        const param_text = self.trimWhitespace(param.text());
         log.debug("writeParameters: param[{}] type={s}, text='{s}'", .{ j, @tagName(param_type), param_text });
 
         switch (param_type) {
@@ -462,7 +478,7 @@ pub fn writeExtendsStatement(self: *GdWriter, node: Node) Error!void {
 
     // extends
     try self.write("extends ", .{});
-    try self.write(formatter.trimWhitespace(node.child(1).?.text()), .{});
+    try self.write(self.trimWhitespace(node.child(1).?.text()), .{});
 }
 
 pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
@@ -592,7 +608,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     // optional name
     {
         if (node.child(i).?.getTypeAsEnum(NodeType) == .name) {
-            const text = formatter.trimWhitespace(node.child(i).?.text());
+            const text = self.trimWhitespace(node.child(i).?.text());
             try self.write(" ", .{});
             try self.write(text, .{});
             i += 1;
@@ -612,7 +628,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
                 continue;
             };
 
-            const param_text = formatter.trimWhitespace(param.text());
+            const param_text = self.trimWhitespace(param.text());
             switch (param_type) {
                 .typed_parameter => {
                     try self.write(param_text, .{});
@@ -1208,7 +1224,7 @@ pub fn handleComment(self: *GdWriter, comment_node: Node) Error!void {
         // Don't write newline for inline comments - let the caller handle it
     } else {
         // Standalone comment - preserve indentation
-        try self.indent_writer.writeIndent(self.writer, self.context);
+        try self.writeIndentLevel(self.context.indent_level);
         try self.writeTrimmed(comment_node);
         // Note: newline after comment is handled by the container (writeBody)
     }
@@ -1355,7 +1371,6 @@ const formatter = @import("formatter.zig");
 const @"type" = @import("type.zig");
 const Context = @import("Context.zig");
 const WhitespaceConfig = @import("WhitespaceConfig.zig");
-const IndentWriter = @import("IndentWriter.zig");
 
 // ============================================================================
 // UNIT TESTS
