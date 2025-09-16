@@ -11,8 +11,9 @@ allowed-tools: mcp__github__get_issue, mcp__github__list_issue_types, mcp__githu
 
 ## Behavior
 
-1. **Fetch GitHub Issue**
+1. **Fetch from GitHub**
    - Retrieves the issue from the GitHub repository
+   - Retrieves the associated pull request (if exists)
    - Loads issue title, description, labels, and comments
    - Validates that the issue exists and is accessible
 
@@ -31,7 +32,7 @@ allowed-tools: mcp__github__get_issue, mcp__github__list_issue_types, mcp__githu
    - **Testing Strategy**: Is the validation approach adequate?
 
 4. **Review Output**
-   - Posts comprehensive review feedback as a GitHub issue comment
+   - Posts comprehensive review feedback as a GitHub Pull Request review
    - Provides structured feedback and recommendations
    - Identifies gaps, risks, and improvement opportunities
    - Suggests refinements to the issue specification
