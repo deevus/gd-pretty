@@ -22,7 +22,7 @@ allocator: std.mem.Allocator,
 const Options = struct {
     writer: *Writer,
     context: ?Context = null,
-    indent_config: IndentConfig = .default,
+    whitespace_config: WhitespaceConfig = .default,
     allocator: std.mem.Allocator,
 };
 
@@ -32,7 +32,7 @@ pub fn init(options: Options) GdWriter {
         .bytes_written = 0,
         .current_line_start = 0,
         .context = options.context orelse .{},
-        .indent_writer = .init(options.indent_config),
+        .indent_writer = .init(options.whitespace_config),
         .allocator = options.allocator,
     };
 }
@@ -1354,7 +1354,7 @@ const NodeType = enums.GdNodeType;
 const formatter = @import("formatter.zig");
 const @"type" = @import("type.zig");
 const Context = @import("Context.zig");
-const IndentConfig = @import("IndentConfig.zig");
+const WhitespaceConfig = @import("WhitespaceConfig.zig");
 const IndentWriter = @import("IndentWriter.zig");
 
 // ============================================================================
