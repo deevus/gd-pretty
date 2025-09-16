@@ -61,7 +61,7 @@ Many GDScript features are not yet implemented:
 - 🚧 **Classes & Inheritance**: Partial support
 - 🚧 **Functions**: Basic support, missing advanced features
 - 🚧 **Variables**: Basic support
-- 🚧 **Control Flow**: Limited support
+- 🚧 **Control Flow**: While loops fully supported, if/for/match statements partial
 - 🚧 **Data Types**: Partial support
 - 🚧 **Operators**: Basic support
 - ❌ **Advanced Features**: Signals, properties, annotations, lambdas mostly unsupported
