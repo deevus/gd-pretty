@@ -6,6 +6,11 @@ allowed-tools: mcp__github__get_issue, mcp__github__list_issue_types, mcp__githu
 
 # Issue Work Command
 
+## Context
+
+- Issue slug: A short descriptive identifier for the issue
+- Branch name: `issue-${issue_number}/${issue-slug}`
+
 ## Parameters
 - `issue_number`: The GitHub issue number (e.g., "1", "2", "3")
 - `agent`: The specialized agent to use for working on the issue
@@ -38,10 +43,15 @@ allowed-tools: mcp__github__get_issue, mcp__github__list_issue_types, mcp__githu
    - Relevant file paths mentioned in the GitHub issue
 
 4. **Progress Tracking**
-   - Agent progress is posted as comments on the GitHub issue
+   - For in-progress tasks, agent will check comments or reviews on the issue/pull request
+   - Agent progress is posted as comments on the GitHub issue or Pull Request
    - Status updates are reflected in GitHub issue labels
    - Final implementation results are documented in issue comments
    - Issues are automatically closed when work is completed
+   - Work is conducted on a separate git branch
+
+5. **Completed work**
+   - Agent will create a GitHub Pull Request with the completed implementation
 
 ## Agent Selection Guidelines
 

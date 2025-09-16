@@ -1,7 +1,9 @@
 class X:
 	pass
+
 	func foo():
 		pass
+
 	class Y:
 		func bar():
 			pass

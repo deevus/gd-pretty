@@ -1,13 +1,9 @@
 var x 
-
 var y 
-
 func foo():
 	pass
 var q 
-
 var w 
-
 class X:
 	pass
 	func foo():
@@ -17,9 +13,9 @@ class X:
 	class Y:
 		pass
 		# xxx
-
 	func baz():
 		pass
+
 	# yyy
 
 	func bat():
@@ -29,14 +25,10 @@ func bar():
 func baz():
 	pass
 # zzz
-
 func bat():
 	pass
 var a 
-
 var b 
-
 # qqq
-
 class C:
 	pass

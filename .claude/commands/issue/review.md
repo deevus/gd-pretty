@@ -1,7 +1,7 @@
 ---
 description: Review an existing GitHub issue using technical product management expertise
 argument-hint: [issue-number]
-allowed-tools: mcp__github__get_issue, mcp__github__list_issue_types, mcp__github__search_issues, mcp__github__add_issue_comment, mcp__github__list_issues, mcp__github__list_sub_issues, mcp__github__update_issue, mcp__github__reprioritize_sub_issue, mcp__github__create_sub_issue
+allowed-tools: mcp__github__get_issue, mcp__github__list_issue_types, mcp__github__search_issues, mcp__github__add_issue_comment, mcp__github__list_issues, mcp__github__list_sub_issues, mcp__github__update_issue, mcp__github__reprioritize_sub_issue, mcp__github__create_sub_issue, mcp__github__add_comment_to_pending_review, mcp__github__create_and_submit_pull_request_review, mcp__github__delete_pending_pull_request_review, mcp__github__get_pull_request, mcp__github__get_pull_request_*, mcp__github__list_pull_requests, mcp__github__search_pull_requests, mcp__github__submit_pending_pull_request_review
 ---
 
 # Issue Review Command
@@ -11,8 +11,9 @@ allowed-tools: mcp__github__get_issue, mcp__github__list_issue_types, mcp__githu
 
 ## Behavior
 
-1. **Fetch GitHub Issue**
+1. **Fetch from GitHub**
    - Retrieves the issue from the GitHub repository
+   - Retrieves the associated pull request (if exists)
    - Loads issue title, description, labels, and comments
    - Validates that the issue exists and is accessible
 
@@ -31,7 +32,7 @@ allowed-tools: mcp__github__get_issue, mcp__github__list_issue_types, mcp__githu
    - **Testing Strategy**: Is the validation approach adequate?
 
 4. **Review Output**
-   - Posts comprehensive review feedback as a GitHub issue comment
+   - Posts comprehensive review feedback as a GitHub Pull Request review
    - Provides structured feedback and recommendations
    - Identifies gaps, risks, and improvement opportunities
    - Suggests refinements to the issue specification

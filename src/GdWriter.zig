@@ -291,67 +291,64 @@ pub fn writeBody(self: *GdWriter, node: Node) Error!void {
     assert(node.getTypeAsEnum(NodeType) == .body);
 
     // Process all children in the body
-    for (0..node.childCount()) |i| {
-        if (node.child(@intCast(i))) |child| {
-            // Check if this is a comment
-            if (child.getTypeAsEnum(NodeType) == .comment) {
-                // Check if this is an inline comment (on same line as previous statement)
-                if (isInlineComment(child)) {
-                    // Handle inline comment - it should appear on the same line as the previous statement
-                    // The previous statement should have NOT written a newline
-                    try self.handleComment(child);
-                    try self.writeNewline();
-                } else {
-                    // Standalone comment - handleComment already writes the newline
-                    // Check if we need to preserve blank lines from the original source
-                    if (i > 0) {
-                        const prev_child = node.child(@intCast(i - 1)).?;
+    var i: u32 = 0;
+    while (i < node.childCount()) {
+        const child = node.child(i).?;
 
-                        // Check if there were blank lines in the original source
-                        if (hasBlankLinesBetween(prev_child, child)) {
-                            // Preserve the blank line from the original
-                            try self.writeNewline();
-                        } else if (prev_child.getTypeAsEnum(NodeType) != .comment) {
-                            // Only add a newline before if the previous child was not a comment
-                            // This handles the case where we're after a non-comment statement
-                            try self.writeNewline();
-                        }
-                        // If prev was a comment and no blank lines in original, don't add extra newline
-                    }
-                    try self.handleComment(child);
-                }
-            } else {
-                // Regular statement
-                if (i > 0) {
-                    // Add newline between statements
-                    try self.writeNewline();
-                }
-                // Write proper indentation for the statement
-                try self.indent_writer.writeIndent(self.writer, self.context);
-                log.debug("writeBody: processing child {}: type={s}", .{ i, child.getTypeAsString() });
+        // Check if this is an inline comment
+        const is_inline_comment = child.getTypeAsEnum(NodeType) == .comment and isInlineComment(child);
 
-                // Check if the next child is an inline comment
-                const next_child = if (i + 1 < node.childCount()) node.child(@intCast(i + 1)) else null;
-                const has_inline_comment = if (next_child) |nc|
-                    nc.getTypeAsEnum(NodeType) == .comment and isInlineComment(nc)
-                else
-                    false;
-
-                // Process the statement
-                var cursor = child.cursor();
-
-                // Save the current context to pass info about inline comments
-                const old_suppress_newline = self.context.suppress_final_newline;
-                if (has_inline_comment) {
-                    self.context.suppress_final_newline = true;
-                }
-
-                try formatter.depthFirstWalk(&cursor, self);
-
-                // Restore context
-                self.context.suppress_final_newline = old_suppress_newline;
-            }
+        if (is_inline_comment) {
+            // Inline comment - just handle it without newlines
+            try self.handleComment(child);
+            i += 1;
+            continue;
         }
+
+        // Not an inline comment - add newline before if not first item
+        if (i > 0) {
+            // Check if we need to preserve blank lines from the original source
+            const prev_child = node.child(i - 1).?;
+            if (hasBlankLinesBetween(prev_child, child)) {
+                // Add extra newline to preserve blank line from original
+                try self.writeNewline();
+            }
+            try self.writeNewline();
+        }
+
+        // Check if this is a standalone comment
+        if (child.getTypeAsEnum(NodeType) == .comment) {
+            // Standalone comment - just handle it (indentation included)
+            try self.handleComment(child);
+        } else {
+            // Regular statement
+            // Write proper indentation for the statement
+            try self.indent_writer.writeIndent(self.writer, self.context);
+            log.debug("writeBody: processing child {}: type={s}", .{ i, child.getTypeAsString() });
+
+            // Check if the next child is an inline comment
+            const next_child = if (i + 1 < node.childCount()) node.child(i + 1) else null;
+            const has_inline_comment = if (next_child) |nc|
+                nc.getTypeAsEnum(NodeType) == .comment and isInlineComment(nc)
+            else
+                false;
+
+            // Process the statement
+            var cursor = child.cursor();
+
+            // Save the current context to pass info about inline comments
+            const old_suppress_newline = self.context.suppress_final_newline;
+            if (has_inline_comment) {
+                self.context.suppress_final_newline = true;
+            }
+
+            try formatter.depthFirstWalk(&cursor, self);
+
+            // Restore context
+            self.context.suppress_final_newline = old_suppress_newline;
+        }
+
+        i += 1;
     }
 }
 
@@ -422,7 +419,7 @@ pub fn writeSignalStatement(self: *GdWriter, node: Node) Error!void {
         }
     }
 
-    try self.writeNewline();
+    // Newline handled by container (writeBody/writeSource)
 }
 
 pub fn writeParameters(self: *GdWriter, node: Node) Error!void {
@@ -552,8 +549,10 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
         }
     }
 
+    // Newline handled by container (writeBody/writeSource) unless suppressed for inline comments
     if (!self.context.suppress_final_newline) {
-        try self.writeNewline();
+        // Only add newline if this statement truly needs one (e.g., for inline comments)
+        // Container will handle regular newlines between statements
     }
 }
 
@@ -736,7 +735,7 @@ pub fn writeClassNameStatement(self: *GdWriter, node: Node) Error!void {
     const name_node = node.child(1) orelse return Error.MissingRequiredChild;
     assert(name_node.getTypeAsEnum(NodeType) == .name);
     try self.writeTrimmed(name_node);
-    try self.writeNewline();
+    // Newline handled by container (writeBody/writeSource)
 }
 
 // ============================================================================
@@ -749,14 +748,20 @@ pub fn writeSource(self: *GdWriter, node: Node) Error!void {
 
     // Source node is the root - need to traverse its children
     var i: u32 = 0;
+    var has_previous_statement = false;
+
     while (i < node.childCount()) : (i += 1) {
-        if (i > 0) {
-            try self.writeNewline();
-        }
         const child = node.child(i).?;
         log.debug("writeSource: processing child {}: node_type={s}", .{ i, child.getTypeAsString() });
+
+        // Only add newline between statements, not before first or after empty nodes
+        if (has_previous_statement) {
+            try self.writeNewline();
+        }
+
         var cursor = child.cursor();
         try formatter.depthFirstWalk(&cursor, self);
+        has_previous_statement = true;
     }
     log.debug("writeSource: completed, bytes_written={}", .{self.bytes_written});
 }
@@ -1111,7 +1116,7 @@ pub fn handleComment(self: *GdWriter, comment_node: Node) Error!void {
         // Standalone comment - preserve indentation
         try self.indent_writer.writeIndent(self.writer, self.context);
         try self.writeTrimmed(comment_node);
-        try self.writeNewline();
+        // Note: newline after comment is handled by the container (writeBody)
     }
 }
 
