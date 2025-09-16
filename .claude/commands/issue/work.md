@@ -1,6 +1,7 @@
 ---
 description: Work on an existing GitHub issue using a specialized agent
 argument-hint: [issue-number] [agent]
+allowed-tools: mcp__github__get_issue, mcp__github__list_issue_types, mcp__github__search_issues, mcp__github__add_issue_comment, mcp__github__list_issues, mcp__github__list_sub_issues, mcp__github__update_issue, mcp__github__add_sub_issue, mcp__github__get_issue_comments
 ---
 
 # Issue Work Command

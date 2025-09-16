@@ -1,6 +1,7 @@
 ---
 description: Create a new GitHub issue (bug or feature request)
 argument-hint: [description]
+allowed-tools: mcp__github__create_issue, mcp__github__list_issue_types, mcp__github__search_issues
 ---
 
 # Issue Create Command
