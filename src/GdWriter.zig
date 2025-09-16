@@ -78,7 +78,7 @@ fn writeTrimmed(self: *GdWriter, node: Node) !void {
 
     // Normalize indentation (convert tabs to configured indent)
     // TODO: Remove this when all symbols are handled
-    const normalized_text = try formatter.writeNormalised(trimmed_text, self.context, self.allocator);
+    const normalized_text = try formatter.normalizeIndentation(trimmed_text, self.context, self.allocator);
 
     log.debug("writeTrimmed: node_type={s}, original='{s}', normalized='{s}'", .{ node.getTypeAsString(), original_text[0..@min(30, original_text.len)], normalized_text[0..@min(30, normalized_text.len)] });
     try self.write(normalized_text, .{});
