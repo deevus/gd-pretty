@@ -781,6 +781,106 @@ pub fn writeForStatement(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
+pub fn writeWhileStatement(self: *GdWriter, node: Node) Error!void {
+    log.debug("writeWhileStatement: children={}, indent={}, line_width={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.getCurrentLineWidth(), self.bytes_written });
+    assert(node.getTypeAsEnum(NodeType) == .while_statement);
+
+    var i: u32 = 0;
+
+    // Log all children for debugging
+    for (0..node.childCount()) |idx| {
+        if (node.child(@intCast(idx))) |child| {
+            const trimmed_text = std.mem.trim(u8, child.text(), " \t\n\r");
+            log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(20, trimmed_text.len)] });
+        }
+    }
+
+    // while keyword
+    {
+        const while_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(while_node.getTypeAsEnum(NodeType) == .@"while");
+        try self.write("while ", .{});
+        i += 1;
+    }
+
+    // condition expression
+    {
+        const condition_node = node.child(i) orelse return Error.MissingRequiredChild;
+        log.debug("writeWhileStatement: processing condition of type {s}", .{condition_node.getTypeAsString()});
+
+        var cursor = condition_node.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+        i += 1;
+    }
+
+    // colon
+    {
+        const colon_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(colon_node.getTypeAsEnum(NodeType) == .@":");
+        try self.write(":", .{});
+        i += 1;
+    }
+
+    // Check for inline comment after colon
+    var has_inline_comment = false;
+    if (node.child(i)) |next_node| {
+        if (next_node.getTypeAsEnum(NodeType) == .comment and isInlineComment(next_node)) {
+            try self.handleComment(next_node);
+            has_inline_comment = true;
+            i += 1;
+        }
+    }
+
+    // Write newline after colon (and inline comment if present)
+    try self.writeNewline();
+
+    // body (with comment handling)
+    {
+        var current_index = i;
+        var found_body = false;
+
+        while (current_index < node.childCount()) {
+            const child = node.child(current_index) orelse break;
+
+            const child_type = child.getTypeAsEnum(NodeType) orelse {
+                log.debug("Unknown node type: '{s}', checking if comment", .{child.getTypeAsString()});
+                if (child.getTypeAsEnum(NodeType) == .comment) {
+                    try self.handleComment(child);
+                    current_index += 1;
+                    continue;
+                }
+                log.err("Expected body or comment after while statement, got {s}", .{child.getTypeAsString()});
+                return Error.UnexpectedNodeType;
+            };
+
+            switch (child_type) {
+                .comment => {
+                    try self.handleComment(child);
+                    current_index += 1;
+                    continue;
+                },
+                .body => {
+                    // Create temporary context with increased indentation
+                    const old_indent = self.context.indent_level;
+                    self.context.indent_level += 1;
+                    try self.writeBody(child);
+                    self.context.indent_level = old_indent;
+                    found_body = true;
+                    break;
+                },
+                else => {
+                    log.err("Expected body or comment after while statement, got {s}", .{child.getTypeAsString()});
+                    return Error.UnexpectedNodeType;
+                },
+            }
+        }
+
+        if (!found_body) {
+            return Error.MissingRequiredChild;
+        }
+    }
+}
+
 pub fn writeAssignment(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement variable assignments (var = value)
     try self.writeTrimmed(node);
@@ -1046,6 +1146,11 @@ pub fn writeVar(self: *GdWriter, node: Node) Error!void {
 
 pub fn writeFor(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement for keyword
+    try self.writeTrimmed(node);
+}
+
+pub fn writeWhile(self: *GdWriter, node: Node) Error!void {
+    // TODO: Implement while keyword
     try self.writeTrimmed(node);
 }
 

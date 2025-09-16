@@ -18,7 +18,9 @@ class X:
 		else:
 			pass
 			pass
-		
+		while true:
+			pass
+			pass
 		for i in range(10):
 			break
 			continue
