@@ -1143,7 +1143,6 @@ pub fn writeFor(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-
 pub fn writeIn(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement in keyword
     try self.writeTrimmed(node);
@@ -1353,7 +1352,6 @@ const enums = @import("enums.zig");
 const NodeType = enums.GdNodeType;
 
 const formatter = @import("formatter.zig");
-const attribute = @import("attribute.zig");
 const @"type" = @import("type.zig");
 const Context = @import("Context.zig");
 const IndentConfig = @import("IndentConfig.zig");

@@ -102,7 +102,7 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
 
 #### Code Quality
 - **Naming Conventions**: Updated function names to follow Zig camelCase convention
-  - `format_files()` → `formatFiles()` 
+  - `format_files()` → `formatFiles()`
   - Improved code consistency with Zig style guidelines
 
 ## Version History

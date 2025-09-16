@@ -44,7 +44,7 @@ pub const Error = error{
 const GdWriter = struct {
     counting_writer: std.io.CountingWriter(@TypeOf(underlying_writer)),
     current_line_start: u64 = 0,
-    
+
     // Default write method checks width
     fn write(self: *Self, text: []const u8) Error!void {
         if (self.getCurrentLineWidth() + text.len > self.context.max_width) {
@@ -52,7 +52,7 @@ const GdWriter = struct {
         }
         // ... normal write logic
     }
-    
+
     // Bypass width checking for indivisible elements
     fn writeUnchecked(self: *Self, text: []const u8) !void {
         // Direct write without width checking

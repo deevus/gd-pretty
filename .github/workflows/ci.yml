@@ -11,24 +11,24 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-    
+
     - name: Setup Zig
       uses: mlugg/setup-zig@v2
-    
+
     - name: Build
       run: zig build
-    
+
     - name: Run tests
       run: zig build test
-    
+
     - name: Check formatting
       run: zig fmt --check src/
-    
+
     - name: Verify version consistency
       run: |
         ZON_VERSION=$(grep -oP '\.version = "\K[^"]+' build.zig.zon)
@@ -45,10 +45,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Zig
       uses: mlugg/setup-zig@v2
-    
+
     - name: Lint with zig fmt
       run: zig fmt --check .
 
@@ -58,43 +58,43 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
-    
+
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
         fetch-depth: 0
-    
+
     - name: Setup Zig
       uses: mlugg/setup-zig@v2
-    
+
     - name: Build release binaries
       run: |
         # Linux x86_64
         zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-linux
         mkdir -p dist/linux-x86_64
         cp zig-out/bin/gd-pretty dist/linux-x86_64/
-        
+
         # Linux ARM64
         zig build -Doptimize=ReleaseSafe -Dtarget=aarch64-linux
         mkdir -p dist/linux-arm64
         cp zig-out/bin/gd-pretty dist/linux-arm64/
-        
+
         # macOS x86_64
         zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-macos
         mkdir -p dist/macos-x86_64
         cp zig-out/bin/gd-pretty dist/macos-x86_64/
-        
+
         # macOS ARM64
         zig build -Doptimize=ReleaseSafe -Dtarget=aarch64-macos
         mkdir -p dist/macos-arm64
         cp zig-out/bin/gd-pretty dist/macos-arm64/
-        
+
         # Windows x86_64
         zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-windows
         mkdir -p dist/windows-x86_64
         cp zig-out/bin/gd-pretty.exe dist/windows-x86_64/
-    
+
     - name: Create archives
       run: |
         cd dist
@@ -105,7 +105,7 @@ jobs:
             tar -czf "${dir%/}.tar.gz" "$dir"
           fi
         done
-    
+
     - name: Extract version from tag
       id: version
       run: |
@@ -113,19 +113,19 @@ jobs:
         TAG_VERSION=${GITHUB_REF#refs/tags/v}
         echo "Tag version: $TAG_VERSION"
         echo "version=v$TAG_VERSION" >> $GITHUB_OUTPUT
-        
+
         # Verify tag version matches build.zig.zon
         ZON_VERSION=$(grep -oP '\.version = "\K[^"]+' build.zig.zon)
         echo "build.zig.zon version: $ZON_VERSION"
-        
+
         if [ "$TAG_VERSION" != "$ZON_VERSION" ]; then
           echo "❌ Error: Tag version ($TAG_VERSION) doesn't match build.zig.zon ($ZON_VERSION)"
           echo "Please update build.zig.zon version to match the tag"
           exit 1
         fi
-        
+
         echo "✅ Tag version matches build.zig.zon"
-    
+
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:

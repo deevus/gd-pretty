@@ -1,3 +1,4 @@
+// zlint-disable unsafe-undefined
 var log_file: ?File = null;
 var log_file_writer: ?File.Writer = null;
 var allocator: Allocator = undefined;
@@ -93,5 +94,4 @@ pub fn printErrorAndExit(comptime fmt: []const u8, args: anytype) !noreturn {
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const File = std.fs.File;
-const Writer = std.Io.Writer;
 const LogLevel = std.log.Level;

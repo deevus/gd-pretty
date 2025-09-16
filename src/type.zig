@@ -5,7 +5,6 @@ const formatter = @import("formatter.zig");
 const enums = @import("enums.zig");
 
 const NodeType = enums.GdNodeType;
-const assert = std.debug.assert;
 
 pub const Error = error{MissingRequiredChild} || std.Io.Writer.Error;
 

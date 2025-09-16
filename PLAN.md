@@ -80,7 +80,7 @@ pub fn deindent(self: Context) Context {
 - [x] ~~Add max_width field with default 100~~ (COMPLETED)
 - [x] ~~Update `indent()` and `deindent()` methods to include max_width~~ (COMPLETED)
 - [x] ~~Add indent_type enum and field~~ (Already implemented)
-- [x] ~~Add indent_size field with default 4~~ (Already implemented) 
+- [x] ~~Add indent_size field with default 4~~ (Already implemented)
 - [x] ~~Update Context creation to use new defaults~~ (Already implemented)
 
 **Current Status**: COMPLETED ✅
@@ -107,19 +107,19 @@ const GdWriter = struct {
     counting_writer: std.io.CountingWriter(@TypeOf(underlying_writer)),
     current_line_start: u64 = 0,
     allocator: std.mem.Allocator,
-    
+
     // Helper methods
     fn getCurrentLineWidth(self: *Self) u32 {
         return @intCast(u32, self.counting_writer.bytes_written - self.current_line_start);
     }
-    
+
     fn writeWithCheck(self: *Self, text: []const u8, context: Context) WriteError!void {
         if (self.getCurrentLineWidth() + text.len > context.max_width) {
             return WriteError.MaxWidthExceeded;
         }
-        
+
         try self.counting_writer.write(text);
-        
+
         // Reset line start on newlines
         if (std.mem.lastIndexOf(u8, text, "\n")) |_| {
             self.current_line_start = self.counting_writer.bytes_written;
@@ -131,7 +131,7 @@ const GdWriter = struct {
 **Tasks**:
 - [ ] Add WriteError type with MaxWidthExceeded (DEFERRED)
 - [x] ~~Replace direct writer with std.io.CountingWriter wrapper~~ (COMPLETED)
-- [x] ~~Add current_line_start tracking field~~ (COMPLETED) 
+- [x] ~~Add current_line_start tracking field~~ (COMPLETED)
 - [x] ~~Implement getCurrentLineWidth() helper~~ (COMPLETED)
 - [x] ~~Add newline detection with debug output for line lengths~~ (COMPLETED)
 - [x] ~~Update initialization to use countingWriter()~~ (COMPLETED)
@@ -196,18 +196,18 @@ fn writeBinaryExpressionWithBacktrack(self: *Self, node: *const Node, context: C
     // Create temporary buffer
     var temp_buffer = std.ArrayList(u8).init(self.allocator);
     defer temp_buffer.deinit();
-    
+
     // Create temporary counting writer
     var temp_counting_writer = std.io.countingWriter(temp_buffer.writer());
     var temp_line_start: u64 = 0;
-    
+
     // Try writing to temporary buffer
     const success = blk: {
         // Simulate writing with width checking
         // ... implementation details
         break :blk true; // or false if MaxWidthExceeded
     };
-    
+
     if (success) {
         // Write buffer contents to real output
         try self.counting_writer.writeAll(temp_buffer.items);
@@ -294,7 +294,7 @@ src/
 ├── Context.zig          # Modified: Add max_width field
 ├── GdWriter.zig         # Modified: Add CountingWriter integration and error handling
 ├── enums.zig           # No changes needed
-├── formatter.zig       # No changes needed  
+├── formatter.zig       # No changes needed
 └── main.zig            # No changes needed
 
 docs/
@@ -324,7 +324,7 @@ docs/
 2. **Error propagation**: Test MaxWidthExceeded handling
 3. **Backtracking**: Test temporary buffer approach
 
-### Integration Tests  
+### Integration Tests
 1. **Target test case**: `addition_n_subtraction_expressions.in.gd`
 2. **Regression tests**: Ensure other tests still pass
 3. **Edge cases**: Boundary conditions and error scenarios
@@ -357,7 +357,7 @@ docs/
 
 - **Step 1**: Configuration ~~(30 minutes)~~ ✅ COMPLETED
 - **Step 2**: CountingWriter integration ~~(1-2 hours)~~ 🚫 BLOCKED - needs compilation fixes
-- **Step 3**: Error-driven binary expression writing (2-3 hours) - PENDING  
+- **Step 3**: Error-driven binary expression writing (2-3 hours) - PENDING
 - **Step 4**: Backtracking strategy (1-2 hours) - PENDING
 - **Step 5-6**: Integration and helpers (1 hour) - PENDING
 - **Step 7-8**: Testing and edge cases (2-3 hours) - PENDING
