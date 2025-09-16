@@ -22,36 +22,53 @@ allowed-tools: mcp__github__get_issue, mcp__github__list_issue_types, mcp__githu
    - Loads issue title, description, labels, and current status
    - Validates that the issue exists and is accessible
 
-2. **Agent Assignment**
+2. **Branch Management (Pre-Work)**
+   - Create issue slug from issue title (lowercase, hyphenated)
+   - Create branch name: `issue-${issue_number}/${issue-slug}`
+   - Check if issue branch already exists
+   - If branch doesn't exist, create it from main branch
+   - Checkout the issue branch before starting work
+
+3. **Agent Assignment**
    - Launch the specified agent with the GitHub issue context
    - Provide the agent with:
      - Complete GitHub issue description and requirements
      - Relevant file paths and codebase context
      - Clear implementation guidance from issue content
+     - Current branch context and git workflow expectations
 
-3. **Available Agents**
+4. **Available Agents**
    - `zig-systems-expert`: For Zig code implementation, memory management, and systems programming
    - `general-purpose`: For general implementation tasks and research
    - `backend-database-architect`: For performance optimization and system architecture
    - `tech-project-manager`: For code review and implementation planning
 
-3. **Agent Context**
+5. **Agent Context**
    The agent will receive:
    - Full GitHub issue description including acceptance criteria
    - Implementation notes and technical requirements from issue content
    - Testing requirements and definition of done
    - Relevant file paths mentioned in the GitHub issue
 
-4. **Progress Tracking**
+6. **Progress Tracking**
    - For in-progress tasks, agent will check comments or reviews on the issue/pull request
    - Agent progress is posted as comments on the GitHub issue or Pull Request
    - Status updates are reflected in GitHub issue labels
    - Final implementation results are documented in issue comments
-   - Issues are automatically closed when work is completed
-   - Work is conducted on a separate git branch
+   - All work is conducted on the dedicated issue branch
 
-5. **Completed work**
-   - Agent will create a GitHub Pull Request with the completed implementation
+7. **Post-Work Git Management**
+   - Commit all changes to the issue branch with descriptive commit message
+   - Push the issue branch to origin
+   - Create a GitHub Pull Request from issue branch to main
+   - Link the PR to the GitHub issue (using "Closes #issue_number" or "Fixes #issue_number")
+   - Add appropriate labels and reviewers to the PR
+
+8. **Completed Work**
+   - Agent creates a comprehensive GitHub Pull Request with implementation summary
+   - PR includes testing notes and verification steps
+   - Issue is automatically linked and will be closed when PR is merged
+   - Branch cleanup occurs after successful merge
 
 ## Agent Selection Guidelines
 
@@ -88,6 +105,49 @@ issue:work 4 general-purpose
 issue:work 5 zig-systems-expert
 ```
 
+## Implementation Workflow
+
+### Pre-Work Steps (Before Agent Assignment)
+1. **Issue Validation**: Fetch GitHub issue details and validate existence
+2. **Branch Name Generation**:
+   - Extract issue title and create slug (lowercase, hyphens for spaces)
+   - Remove special characters and limit length
+   - Format: `issue-{number}/{slug}` (e.g., `issue-15/fix-indentation-bug`)
+3. **Git Branch Management**:
+   ```bash
+   # Check if branch exists
+   git show-branch issue-{number}/{slug} 2>/dev/null
+
+   # If branch doesn't exist, create from main
+   git checkout main
+   git pull origin main
+   git checkout -b issue-{number}/{slug}
+
+   # If branch exists, checkout and update
+   git checkout issue-{number}/{slug}
+   git pull origin issue-{number}/{slug}
+   ```
+4. **Agent Context Preparation**: Include branch name and git workflow in agent prompt
+
+### Post-Work Steps (After Agent Completion)
+1. **Commit Changes**:
+   ```bash
+   git add .
+   git commit -m "feat: {issue title summary}
+
+   Implements #{issue_number}: {brief description}
+
+   - {key changes made}
+   - {testing performed}
+
+   Closes #{issue_number}"
+   ```
+2. **Push Branch**: `git push origin issue-{number}/{slug}`
+3. **Create Pull Request**:
+   - Title: "{type}: {issue title}"
+   - Body: Links to issue, summary of changes, testing notes
+   - Automatically link to issue using "Closes #{issue_number}"
+
 ## GitHub Integration
 
 ### Issue Context Provided to Agent
@@ -103,7 +163,16 @@ The agent will receive a comprehensive prompt including:
 - Relevant file paths mentioned in the issue
 - Architecture overview from CLAUDE.md
 - Development guidelines and practices
+- Current branch name and git workflow expectations
 - Clear directive to implement the solution
+
+#### Agent Responsibilities
+The agent must:
+- Work exclusively on the issue branch (never commit to main)
+- Follow the repository's development practices (testing, linting, etc.)
+- Implement the complete solution as specified in the issue
+- Provide clear implementation notes for the final commit and PR
+- NOT create commits or PRs themselves (handled by post-work automation)
 
 ### Progress Tracking
 - **Issue Comments**: Agent posts progress updates as GitHub issue comments
@@ -117,8 +186,26 @@ The agent's work is considered complete when:
 - All acceptance criteria from the GitHub issue are satisfied
 - Implementation follows codebase conventions
 - Tests pass (existing + any new tests)
-- Code quality meets standards
-- GitHub issue is updated with completion status
+- Code quality meets standards (linting, formatting)
+- Changes are ready for commit (staged and ready)
+- Agent provides implementation summary for commit message and PR
+
+## Workflow Validation
+
+Before running the command:
+- Ensure you have a clean working directory
+- Confirm main branch is up-to-date
+- Verify GitHub credentials are configured
+
+During execution:
+- Monitor that work happens on the issue branch
+- Validate that no commits are made to main
+- Ensure agent follows development practices
+
+After completion:
+- Review changes before committing
+- Verify PR links correctly to the issue
+- Confirm all acceptance criteria are met
 
 ## Command Format
 ```
