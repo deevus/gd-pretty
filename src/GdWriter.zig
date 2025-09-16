@@ -787,11 +787,13 @@ pub fn writeWhileStatement(self: *GdWriter, node: Node) Error!void {
 
     var i: u32 = 0;
 
-    // Log all children for debugging
-    for (0..node.childCount()) |idx| {
-        if (node.child(@intCast(idx))) |child| {
-            const trimmed_text = std.mem.trim(u8, child.text(), " \t\n\r");
-            log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(20, trimmed_text.len)] });
+    // Debug logging can be enabled for troubleshooting
+    if (comptime std.log.default_level == .debug) {
+        for (0..node.childCount()) |idx| {
+            if (node.child(@intCast(idx))) |child| {
+                const trimmed_text = std.mem.trim(u8, child.text(), " \t\n\r");
+                log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(20, trimmed_text.len)] });
+            }
         }
     }
 
@@ -822,11 +824,9 @@ pub fn writeWhileStatement(self: *GdWriter, node: Node) Error!void {
     }
 
     // Check for inline comment after colon
-    var has_inline_comment = false;
     if (node.child(i)) |next_node| {
         if (next_node.getTypeAsEnum(NodeType) == .comment and isInlineComment(next_node)) {
             try self.handleComment(next_node);
-            has_inline_comment = true;
             i += 1;
         }
     }
@@ -843,12 +843,6 @@ pub fn writeWhileStatement(self: *GdWriter, node: Node) Error!void {
             const child = node.child(current_index) orelse break;
 
             const child_type = child.getTypeAsEnum(NodeType) orelse {
-                log.debug("Unknown node type: '{s}', checking if comment", .{child.getTypeAsString()});
-                if (child.getTypeAsEnum(NodeType) == .comment) {
-                    try self.handleComment(child);
-                    current_index += 1;
-                    continue;
-                }
                 log.err("Expected body or comment after while statement, got {s}", .{child.getTypeAsString()});
                 return Error.UnexpectedNodeType;
             };
