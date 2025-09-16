@@ -16,7 +16,7 @@ const node_type_map = std.static_string_map.StaticStringMap(NodeTypeMapValue).in
     for (enum_fields, 0..) |field_name, i| {
         var buf: ["write_".len + field_name.len]u8 = undefined;
         @memcpy(&buf, "write_" ++ field_name);
-        const write_fn = case.comptimeTo(.camel, &buf) catch unreachable;
+        const write_fn = case.comptimeTo(.camel, &buf) catch std.debug.panic("Failed to convert field name to camel case", {});
 
         if (@hasDecl(GdWriter, write_fn)) {
             result[i] = .{
@@ -85,7 +85,6 @@ fn printTreeRecursive(root: ts.TSNode, writer: anytype, depth: usize) !void {
 }
 
 const std = @import("std");
-const Writer = std.Io.Writer;
 
 const ts = @import("tree-sitter");
 const case = @import("case");
@@ -93,7 +92,4 @@ const case = @import("case");
 const enums = @import("enums.zig");
 const GdNodeType = enums.GdNodeType;
 
-const attribute = @import("attribute.zig");
-const Context = @import("Context.zig");
-const IndentConfig = @import("IndentConfig.zig");
 const GdWriter = @import("GdWriter.zig");

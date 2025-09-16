@@ -2,7 +2,24 @@
 
 This file tracks completed improvements and changes to the gd-pretty GDScript formatter.
 
-## [Unreleased] - September 15, 2025
+## [Unreleased] - September 16, 2025
+
+### Added
+- **🎉 While Loop Support** - Implemented complete while loop formatting functionality
+  - **Problem**: While loops were completely omitted from formatter output, breaking GDScript functionality
+  - **Solution**: Added `while_statement` to `GdNodeType` enum and implemented full `writeWhileStatement` method
+  - **Implementation**: Complete while loop handling with proper keyword formatting, condition expression processing, colon placement, and body indentation
+  - **Files Enhanced**: `src/enums.zig` (added `while_statement` enum), `src/GdWriter.zig` (implemented `writeWhileStatement` method)
+  - **Test Coverage**: Comprehensive test suite with 5 dedicated test files covering basic usage, nested loops, comment handling, edge cases, and complex indentation scenarios
+  - **Result**: While loops now format correctly with proper indentation and preserve all functionality
+  - **Impact**: Fixes critical issue #4 where while loops were missing from formatted output
+
+- **📋 Enhanced While Loop Test Coverage** - Added comprehensive test suite for while loop formatting
+  - **Coverage Areas**: Basic conditions, nested loops, comment preservation, edge cases, complex indentation
+  - **Test Files Added**: `while_loops_basic`, `while_loops_nested`, `while_loops_comments`, `while_loops_edge_cases`, `while_loops_indentation`
+  - **Scenarios Tested**: Simple/complex conditions, deep nesting, inline/standalone comments, empty bodies, break/continue, method chaining
+  - **Result**: Robust test coverage ensuring while loop formatting works correctly across all use cases
+  - **Impact**: Addresses PR review feedback for more thorough testing of while loop functionality
 
 ### Fixed
 - **🐛 Blank Lines After Line Comments** - Fixed erroneous blank line insertion after standalone line comments
@@ -92,7 +109,7 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
 
 #### Code Quality
 - **Naming Conventions**: Updated function names to follow Zig camelCase convention
-  - `format_files()` → `formatFiles()` 
+  - `format_files()` → `formatFiles()`
   - Improved code consistency with Zig style guidelines
 
 ## Version History

@@ -2,7 +2,7 @@
 
 This file tracks improvements needed for the gd-pretty GDScript formatter.
 
-*Last updated: July 25, 2025*
+*Last updated: September 16, 2025*
 
 ## Critical Issues
 
@@ -12,9 +12,9 @@ None currently.
 
 ### 1. Implement Proper Language Construct Formatting
 **Priority: HIGH**
-- **Current State**: All node types have stub methods that preserve original text  
+- **Current State**: All node types have stub methods that preserve original text
 - **Goal**: Replace stubs with proper formatting implementations for:
-  - **Control flow**: if/elif/else, for loops, while loops, match statements (proper indentation)
+  - **Control flow**: if/elif/else, for loops, match statements (proper indentation)
   - **Literals**: strings, numbers, booleans, arrays, dictionaries (spacing and formatting)
   - **Operators**: binary operators, comparisons, assignments (consistent spacing)
   - **Comments**: proper preservation and positioning
@@ -35,7 +35,7 @@ None currently.
 - **Files**: `src/Context.zig`, `src/main.zig`
 
 ### 4. Better File Handling
-**Priority: MEDIUM**  
+**Priority: MEDIUM**
 - In-place editing with `--write` flag
 - Directory recursion and glob patterns
 - `--check` mode to verify formatting without output
@@ -97,7 +97,7 @@ const node = parent.child(i) orelse return error.MalformedAST;
 
 ### Test Coverage Needed
 - Error condition testing for malformed input
-- Configuration option testing  
+- Configuration option testing
 - CLI argument testing
 - Performance regression tests
 - Integration testing with real GDScript projects

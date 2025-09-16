@@ -206,7 +206,6 @@ const ArenaAllocator = std.heap.ArenaAllocator;
 const testing = std.testing;
 
 const enums = @import("enums.zig");
-const GdNodeType = enums.GdNodeType;
 const IndentType = enums.IndentType;
 
 const ts = @import("tree-sitter");
@@ -215,7 +214,6 @@ const TSParser = ts.TSParser;
 const cli = @import("cli");
 
 const CliConfig = @import("CliConfig.zig");
-const Context = @import("Context.zig");
 const GdWriter = @import("GdWriter.zig");
 const IndentConfig = @import("IndentConfig.zig");
 

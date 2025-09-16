@@ -14,6 +14,9 @@ class Y:
 	func baz():
 		if true: var h
 		var i 
-		
+		while true:
+			var j 
+			
+			var k 
 		var l 
 var m 
