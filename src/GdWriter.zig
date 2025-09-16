@@ -16,11 +16,13 @@ writer: *Writer,
 bytes_written: u64 = 0,
 current_line_start: u64 = 0,
 context: Context,
+indent_writer: IndentWriter,
 allocator: std.mem.Allocator,
 
 const Options = struct {
     writer: *Writer,
     context: ?Context = null,
+    indent_config: IndentConfig = .default,
     allocator: std.mem.Allocator,
 };
 
@@ -30,6 +32,7 @@ pub fn init(options: Options) GdWriter {
         .bytes_written = 0,
         .current_line_start = 0,
         .context = options.context orelse .{},
+        .indent_writer = .init(options.indent_config),
         .allocator = options.allocator,
     };
 }
@@ -51,7 +54,7 @@ fn writeIndent(self: *GdWriter, options: IndentOptions) Error!void {
         try self.writeNewline();
     }
 
-    try formatter.writeIndent(self.writer, self.context);
+    try self.indent_writer.writeIndent(self.writer, self.context);
     log.debug("writeIndent: completed, final_indent={}, line_width={}", .{ self.context.indent_level, self.getCurrentLineWidth() });
 }
 
@@ -74,7 +77,8 @@ fn writeTrimmed(self: *GdWriter, node: Node) !void {
     const trimmed_text = formatter.trimWhitespace(original_text);
 
     // Normalize indentation (convert tabs to configured indent)
-    const normalized_text = try formatter.normalizeIndentation(trimmed_text, self.context, self.allocator);
+    // TODO: Remove this when all symbols are handled
+    const normalized_text = try formatter.writeNormalised(trimmed_text, self.context, self.allocator);
 
     log.debug("writeTrimmed: node_type={s}, original='{s}', normalized='{s}'", .{ node.getTypeAsString(), original_text[0..@min(30, original_text.len)], normalized_text[0..@min(30, normalized_text.len)] });
     try self.write(normalized_text, .{});
@@ -316,7 +320,7 @@ pub fn writeBody(self: *GdWriter, node: Node) Error!void {
                     try self.writeNewline();
                 }
                 // Write proper indentation for the statement
-                try formatter.writeIndent(self.writer, self.context);
+                try self.indent_writer.writeIndent(self.writer, self.context);
                 log.debug("writeBody: processing child {}: type={s}", .{ i, child.getTypeAsString() });
 
                 // Check if the next child is an inline comment
@@ -1098,7 +1102,7 @@ pub fn handleComment(self: *GdWriter, comment_node: Node) Error!void {
         // Don't write newline for inline comments - let the caller handle it
     } else {
         // Standalone comment - preserve indentation
-        try formatter.writeIndent(self.writer, self.context);
+        try self.indent_writer.writeIndent(self.writer, self.context);
         try self.writeTrimmed(comment_node);
         try self.writeNewline();
     }
@@ -1245,6 +1249,8 @@ const formatter = @import("formatter.zig");
 const attribute = @import("attribute.zig");
 const @"type" = @import("type.zig");
 const Context = @import("Context.zig");
+const IndentConfig = @import("IndentConfig.zig");
+const IndentWriter = @import("IndentWriter.zig");
 
 // ============================================================================
 // UNIT TESTS

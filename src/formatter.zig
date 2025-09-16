@@ -37,16 +37,6 @@ const node_type_map = std.static_string_map.StaticStringMap(NodeTypeMapValue).in
     break :blk result;
 });
 
-pub fn writeIndent(writer: anytype, context: Context) !void {
-    if (context.indent_level == 0) {
-        return;
-    }
-
-    for (0..context.indent_level) |_| {
-        try writer.writeAll(context.indent_str);
-    }
-}
-
 pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, gd_writer: *GdWriter) GdWriter.Error!void {
     const current_node = cursor.currentNode();
     const node_type = current_node.getTypeAsEnum(GdNodeType);
@@ -143,6 +133,7 @@ const case = @import("case");
 const enums = @import("enums.zig");
 const GdNodeType = enums.GdNodeType;
 
-const Context = @import("Context.zig");
 const attribute = @import("attribute.zig");
+const Context = @import("Context.zig");
+const IndentConfig = @import("IndentConfig.zig");
 const GdWriter = @import("GdWriter.zig");
