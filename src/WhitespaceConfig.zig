@@ -1,27 +1,27 @@
-const logger = std.log.scoped(.indent_config);
+const logger = std.log.scoped(.whitespace_config);
 
-const IndentConfig = @This();
+const WhitespaceConfig = @This();
 
 /// The style of indentation to use
 style: IndentType = .spaces,
 /// The width of indentation (number of spaces or tab width)
 width: u32 = 4,
 
-pub fn spaces(width: u32) IndentConfig {
+pub fn spaces(width: u32) WhitespaceConfig {
     return .{
         .style = .spaces,
         .width = width,
     };
 }
 
-pub const tabs: IndentConfig = .{
+pub const tabs: WhitespaceConfig = .{
     .style = .tabs,
 };
 
 pub const default = spaces(4);
 
 /// Auto-detect indentation style from source code
-pub fn fromSourceFile(source_file: File) !IndentConfig {
+pub fn fromSourceFile(source_file: File) !WhitespaceConfig {
     logger.debug("Auto-detecting indentation style from source file", .{});
 
     var buf: [1024]u8 = undefined;
@@ -64,13 +64,13 @@ pub fn fromSourceFile(source_file: File) !IndentConfig {
     return .default;
 }
 
-pub fn fromCliConfig(cli_config: CliConfig) ?IndentConfig {
-    const indent_config: ?IndentConfig = if (cli_config.indent_type) |indent_type| switch (indent_type) {
-        .tabs => IndentConfig.tabs,
-        .spaces => IndentConfig.spaces(cli_config.indent_width),
+pub fn fromCli(cli_config: CliConfig) ?WhitespaceConfig {
+    const whitespace_config: ?WhitespaceConfig = if (cli_config.indent_type) |indent_type| switch (indent_type) {
+        .tabs => WhitespaceConfig.tabs,
+        .spaces => WhitespaceConfig.spaces(cli_config.indent_width),
     } else null;
 
-    if (indent_config) |config| {
+    if (whitespace_config) |config| {
         logger.debug("Using indentation style from CLI. Style: {}", .{config.style});
 
         if (config.style == .spaces) {

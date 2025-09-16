@@ -110,7 +110,7 @@ fn formatFiles() !void {
     var stdout_writer = stdout_file.writer(&buf);
     const writer = &stdout_writer.interface;
 
-    const cli_indent_config: ?IndentConfig = .fromCliConfig(config);
+    const cli_whitespace_config: ?WhitespaceConfig = WhitespaceConfig.fromCli(config);
 
     for (config.files) |path| {
         const file = std.fs.cwd().openFile(path, .{}) catch |err| {
@@ -118,7 +118,7 @@ fn formatFiles() !void {
         };
         defer file.close();
 
-        const indent_config = cli_indent_config orelse try IndentConfig.fromSourceFile(file);
+        const whitespace_config = cli_whitespace_config orelse try WhitespaceConfig.fromSourceFile(file);
 
         // Reset file position for parsing
         try file.seekTo(0);
@@ -134,7 +134,7 @@ fn formatFiles() !void {
         var gd_writer = GdWriter.init(.{
             .writer = writer,
             .allocator = arena_allocator,
-            .indent_config = indent_config,
+            .whitespace_config = whitespace_config,
         });
 
         formatter.depthFirstWalk(&cursor, &gd_writer) catch |err| {
@@ -189,7 +189,7 @@ test "input output pairs" {
                 var gd_writer: GdWriter = .init(.{
                     .writer = writer,
                     .allocator = allocator,
-                    .indent_config = .{
+                    .whitespace_config = .{
                         .style = indent_style,
                     },
                 });
@@ -215,7 +215,7 @@ const cli = @import("cli");
 
 const CliConfig = @import("CliConfig.zig");
 const GdWriter = @import("GdWriter.zig");
-const IndentConfig = @import("IndentConfig.zig");
+const WhitespaceConfig = @import("WhitespaceConfig.zig");
 
 const formatter = @import("formatter.zig");
 const logging = @import("logging.zig");

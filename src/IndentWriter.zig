@@ -1,8 +1,8 @@
 const IndentWriter = @This();
 
-config: IndentConfig,
+config: WhitespaceConfig,
 
-pub fn init(config: IndentConfig) IndentWriter {
+pub fn init(config: WhitespaceConfig) IndentWriter {
     return .{ .config = config };
 }
 
@@ -26,5 +26,5 @@ fn writeTabs(self: IndentWriter, writer: *Writer, context: Context) !void {
 const std = @import("std");
 const Writer = std.Io.Writer;
 
-const IndentConfig = @import("IndentConfig.zig");
+const WhitespaceConfig = @import("WhitespaceConfig.zig");
 const Context = @import("Context.zig");
