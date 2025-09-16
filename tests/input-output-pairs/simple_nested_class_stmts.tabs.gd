@@ -1,9 +1,7 @@
 class X:
 	# aaa
-
 	pass
 	var x 
-
 	# bbb
 
 	var y 
@@ -11,9 +9,6 @@ class X:
 	var z  # ccc
 
 	# ddd
-
 	var q 
-
 	var w 
-
 # eee
