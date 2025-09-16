@@ -76,12 +76,8 @@ fn writeTrimmed(self: *GdWriter, node: Node) !void {
     const original_text = node.text();
     const trimmed_text = formatter.trimWhitespace(original_text);
 
-    // Normalize indentation (convert tabs to configured indent)
-    // TODO: Remove this when all symbols are handled
-    const normalized_text = try formatter.normalizeIndentation(trimmed_text, self.context, self.allocator);
-
-    log.debug("writeTrimmed: node_type={s}, original='{s}', normalized='{s}'", .{ node.getTypeAsString(), original_text[0..@min(30, original_text.len)], normalized_text[0..@min(30, normalized_text.len)] });
-    try self.write(normalized_text, .{});
+    log.debug("writeTrimmed: node_type={s}, original='{s}', normalized='{s}'", .{ node.getTypeAsString(), original_text[0..@min(30, original_text.len)], trimmed_text[0..@min(30, trimmed_text.len)] });
+    try self.write(trimmed_text, .{});
 }
 
 const WriteOptions = struct {
@@ -93,8 +89,19 @@ fn write(self: *GdWriter, text: []const u8, options: WriteOptions) Error!void {
     const escaped_text = if (std.mem.eql(u8, text, "\n")) "\\n" else text;
     log.debug("write: '{s}' ({} bytes), line_width={}, total_bytes={}", .{ escaped_text, text.len, self.getCurrentLineWidth(), self.bytes_written });
 
-    const bytes = try self.writer.write(text);
-    self.bytes_written += bytes;
+    const whitespace = self.indent_writer.config.style;
+
+    for (text) |char| {
+        if (char == '\t' and whitespace == .spaces) {
+            for (0..self.indent_writer.config.width) |_| {
+                try self.writer.writeByte(' ');
+                self.bytes_written += 1;
+            }
+        } else {
+            try self.writer.writeByte(char);
+            self.bytes_written += 1;
+        }
+    }
 
     log.debug("write: completed, new_bytes_written={}, new_line_width={}", .{ self.bytes_written, self.getCurrentLineWidth() });
 }

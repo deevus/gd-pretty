@@ -172,25 +172,31 @@ test "input output pairs" {
             const in_file = try dir.openFile(entry.name, .{});
             defer in_file.close();
 
-            const out_file_name = try std.fmt.allocPrint(allocator, "{s}.out.gd", .{
-                entry.name[0 .. entry.name.len - 6],
-            });
-            var out_file = try dir.createFile(out_file_name, .{});
-            defer out_file.close();
-
-            var out_file_writer = out_file.writer(&buf);
-            const writer = &out_file_writer.interface;
-
             var tree = try ts_parser.parseFile(allocator, in_file);
             var cursor = tree.rootNode().cursor();
 
-            var gd_writer: GdWriter = .init(.{
-                .writer = writer,
-                .allocator = allocator,
-            });
+            for ([_]IndentType{ .tabs, .spaces }) |indent_style| {
+                const out_file_name = try std.fmt.allocPrint(allocator, "{s}.{s}.gd", .{
+                    entry.name[0 .. entry.name.len - 6],
+                    @tagName(indent_style),
+                });
+                var out_file = try dir.createFile(out_file_name, .{});
+                defer out_file.close();
 
-            try formatter.depthFirstWalk(&cursor, &gd_writer);
-            try writer.flush();
+                var out_file_writer = out_file.writer(&buf);
+                const writer = &out_file_writer.interface;
+
+                var gd_writer: GdWriter = .init(.{
+                    .writer = writer,
+                    .allocator = allocator,
+                    .indent_config = .{
+                        .style = indent_style,
+                    },
+                });
+
+                try formatter.depthFirstWalk(&cursor, &gd_writer);
+                try writer.flush();
+            }
         }
     }
 }

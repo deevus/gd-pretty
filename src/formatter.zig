@@ -67,46 +67,6 @@ pub fn trimWhitespace(text: []const u8) []const u8 {
     return std.mem.trim(u8, text, &std.ascii.whitespace);
 }
 
-/// Convert tabs to the configured indentation string in the given text
-pub fn normalizeIndentation(text: []const u8, context: Context, allocator: std.mem.Allocator) ![]const u8 {
-    if (context.indent_type == .tabs) {
-        // If we're using tabs, no conversion needed
-        return text;
-    }
-
-    // Count tabs to replace
-    var tab_count: usize = 0;
-    for (text) |char| {
-        if (char == '\t') {
-            tab_count += 1;
-        }
-    }
-
-    if (tab_count == 0) {
-        // No tabs to replace
-        return text;
-    }
-
-    // Calculate new length
-    const spaces_per_tab = context.indent_str.len;
-    const new_len = text.len + (tab_count * (spaces_per_tab - 1));
-
-    var result = try allocator.alloc(u8, new_len);
-    var write_idx: usize = 0;
-
-    for (text) |char| {
-        if (char == '\t') {
-            @memcpy(result[write_idx .. write_idx + spaces_per_tab], context.indent_str);
-            write_idx += spaces_per_tab;
-        } else {
-            result[write_idx] = char;
-            write_idx += 1;
-        }
-    }
-
-    return result;
-}
-
 pub fn printTree(root: ts.TSNode, writer: anytype) !void {
     try printTreeRecursive(root, writer, 0);
 }
