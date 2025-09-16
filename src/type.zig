@@ -7,6 +7,9 @@ const NodeType = enums.GdNodeType;
 
 pub const Error = error{MissingRequiredChild} || std.Io.Writer.Error;
 
+// Trims leading and trailing whitespace from text
+// Note: This function is duplicated in GdWriter.zig for use there.
+// Kept separate to avoid circular dependencies between modules.
 fn trimWhitespace(text: []const u8) []const u8 {
     return std.mem.trim(u8, text, &std.ascii.whitespace);
 }

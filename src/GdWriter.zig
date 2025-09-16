@@ -86,13 +86,16 @@ fn writeIndentLevel(self: *GdWriter, indent_level: u32) Error!void {
     }
 }
 
-fn trimWhitespace(_: *GdWriter, text: []const u8) []const u8 {
+// Trims leading and trailing whitespace from text
+// Note: This function is duplicated in type.zig for local use there.
+// Kept separate rather than shared utility to avoid circular dependencies.
+fn trimWhitespace(text: []const u8) []const u8 {
     return std.mem.trim(u8, text, &std.ascii.whitespace);
 }
 
 fn writeTrimmed(self: *GdWriter, node: Node) !void {
     const original_text = node.text();
-    const trimmed_text = self.trimWhitespace(original_text);
+    const trimmed_text = trimWhitespace(original_text);
 
     log.debug("writeTrimmed: node_type={s}, original='{s}', normalized='{s}'", .{ node.getTypeAsString(), original_text[0..@min(30, original_text.len)], trimmed_text[0..@min(30, trimmed_text.len)] });
     try self.write(trimmed_text, .{});
@@ -451,13 +454,13 @@ pub fn writeParameters(self: *GdWriter, node: Node) Error!void {
                 try self.handleComment(param);
             } else {
                 // For non-comment unknown types, use trimmed write as fallback
-                const param_text = self.trimWhitespace(param.text());
+                const param_text = trimWhitespace(param.text());
                 try self.write(param_text, .{});
             }
             continue;
         };
 
-        const param_text = self.trimWhitespace(param.text());
+        const param_text = trimWhitespace(param.text());
         log.debug("writeParameters: param[{}] type={s}, text='{s}'", .{ j, @tagName(param_type), param_text });
 
         switch (param_type) {
@@ -478,7 +481,7 @@ pub fn writeExtendsStatement(self: *GdWriter, node: Node) Error!void {
 
     // extends
     try self.write("extends ", .{});
-    try self.write(self.trimWhitespace(node.child(1).?.text()), .{});
+    try self.write(trimWhitespace(node.child(1).?.text()), .{});
 }
 
 pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
@@ -608,7 +611,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     // optional name
     {
         if (node.child(i).?.getTypeAsEnum(NodeType) == .name) {
-            const text = self.trimWhitespace(node.child(i).?.text());
+            const text = trimWhitespace(node.child(i).?.text());
             try self.write(" ", .{});
             try self.write(text, .{});
             i += 1;
@@ -628,7 +631,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
                 continue;
             };
 
-            const param_text = self.trimWhitespace(param.text());
+            const param_text = trimWhitespace(param.text());
             switch (param_type) {
                 .typed_parameter => {
                     try self.write(param_text, .{});
