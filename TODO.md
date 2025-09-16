@@ -2,7 +2,7 @@
 
 This file tracks improvements needed for the gd-pretty GDScript formatter.
 
-*Last updated: July 25, 2025*
+*Last updated: September 16, 2025*
 
 ## Critical Issues
 
@@ -14,7 +14,7 @@ None currently.
 **Priority: HIGH**
 - **Current State**: All node types have stub methods that preserve original text  
 - **Goal**: Replace stubs with proper formatting implementations for:
-  - **Control flow**: if/elif/else, for loops, while loops, match statements (proper indentation)
+  - **Control flow**: if/elif/else, for loops, match statements (proper indentation)
   - **Literals**: strings, numbers, booleans, arrays, dictionaries (spacing and formatting)
   - **Operators**: binary operators, comparisons, assignments (consistent spacing)
   - **Comments**: proper preservation and positioning

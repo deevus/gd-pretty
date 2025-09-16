@@ -1143,10 +1143,6 @@ pub fn writeFor(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeWhile(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement while keyword
-    try self.writeTrimmed(node);
-}
 
 pub fn writeIn(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement in keyword
