@@ -1360,9 +1360,11 @@ pub fn writeColonEquals(self: *GdWriter, node: Node) Error!void {
 }
 
 const std = @import("std");
-const assert = std.debug.assert;
 const Writer = std.Io.Writer;
 const testing = std.testing;
+
+const debug = @import("debug.zig");
+const assert = debug.debugAssert;
 
 const tree_sitter = @import("tree-sitter");
 const Node = tree_sitter.TSNode;
