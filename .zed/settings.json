@@ -1,0 +1,9 @@
+{
+    "languages": {
+        "GDScript": {
+            "formatter": {
+                "language_server": {}
+            }
+        }
+    }
+}
