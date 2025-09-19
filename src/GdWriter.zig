@@ -8,13 +8,11 @@ pub const Error = error{
     UnexpectedNodeType,
     MissingRequiredChild,
     InvalidNodeStructure,
-    MaxWidthExceeded,
     OutOfMemory,
 } || Writer.Error;
 
 writer: *Writer,
 bytes_written: u64 = 0,
-current_line_start: u64 = 0,
 context: Context,
 whitespace_config: WhitespaceConfig,
 allocator: std.mem.Allocator,
@@ -30,7 +28,6 @@ pub fn init(options: Options) GdWriter {
     return GdWriter{
         .writer = options.writer,
         .bytes_written = 0,
-        .current_line_start = 0,
         .context = options.context orelse .{},
         .whitespace_config = options.whitespace_config,
         .allocator = options.allocator,
@@ -43,7 +40,7 @@ pub const IndentOptions = struct {
 };
 
 fn writeIndent(self: *GdWriter, options: IndentOptions) Error!void {
-    log.debug("writeIndent: by={}, new_line={}, current_indent={}, line_width={}", .{ options.by, options.new_line, self.context.indent_level, self.getCurrentLineWidth() });
+    log.debug("writeIndent: by={}, new_line={}, current_indent={}", .{ options.by, options.new_line, self.context.indent_level });
 
     if (options.by != 0) {
         self.context.indent_level += options.by;
@@ -55,21 +52,16 @@ fn writeIndent(self: *GdWriter, options: IndentOptions) Error!void {
     }
 
     try self.writeIndentLevel(self.context.indent_level);
-    log.debug("writeIndent: completed, final_indent={}, line_width={}", .{ self.context.indent_level, self.getCurrentLineWidth() });
-}
-
-fn getCurrentLineWidth(self: *GdWriter) u32 {
-    return @intCast(self.bytes_written - self.current_line_start);
+    log.debug("writeIndent: completed, final_indent={}", .{self.context.indent_level});
 }
 
 fn writeNewline(self: *GdWriter) !void {
-    log.debug("writeNewline: current_line_width={}, bytes_written={}", .{ self.getCurrentLineWidth(), self.bytes_written });
+    log.debug("writeNewline: bytes_written={}", .{self.bytes_written});
 
     const bytes = try self.writer.write("\n");
     self.bytes_written += bytes;
-    self.current_line_start = self.bytes_written;
 
-    log.debug("writeNewline: completed, new_line_start={}, bytes_written={}", .{ self.current_line_start, self.bytes_written });
+    log.debug("writeNewline: completed, bytes_written={}", .{self.bytes_written});
 }
 
 fn writeIndentLevel(self: *GdWriter, indent_level: u32) Error!void {
@@ -101,14 +93,12 @@ fn writeTrimmed(self: *GdWriter, node: Node) !void {
     try self.write(trimmed_text, .{});
 }
 
-const WriteOptions = struct {
-    check_max_width: bool = true,
-};
+const WriteOptions = struct {};
 
 fn write(self: *GdWriter, text: []const u8, options: WriteOptions) Error!void {
     _ = options; // autofix
     const escaped_text = if (std.mem.eql(u8, text, "\n")) "\\n" else text;
-    log.debug("write: '{s}' ({} bytes), line_width={}, total_bytes={}", .{ escaped_text, text.len, self.getCurrentLineWidth(), self.bytes_written });
+    log.debug("write: '{s}' ({} bytes), total_bytes={}", .{ escaped_text, text.len, self.bytes_written });
 
     for (text) |char| {
         if (char == '\t' and self.whitespace_config.style == .spaces) {
@@ -122,7 +112,7 @@ fn write(self: *GdWriter, text: []const u8, options: WriteOptions) Error!void {
         }
     }
 
-    log.debug("write: completed, new_bytes_written={}, new_line_width={}", .{ self.bytes_written, self.getCurrentLineWidth() });
+    log.debug("write: completed, new_bytes_written={}", .{self.bytes_written});
 }
 
 fn isInlineComment(comment_node: Node) bool {
@@ -196,7 +186,7 @@ pub fn writeCall(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
-    log.debug("writeClassDefinition: children={}, indent={}, line_width={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.getCurrentLineWidth(), self.bytes_written });
+    log.debug("writeClassDefinition: children={}, indent={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.bytes_written });
     assert(node.getTypeAsEnum(NodeType) == .class_definition);
 
     var i: u32 = 0;
@@ -306,7 +296,7 @@ pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeBody(self: *GdWriter, node: Node) Error!void {
-    log.debug("writeBody: children={}, indent={}, line_width={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.getCurrentLineWidth(), self.bytes_written });
+    log.debug("writeBody: children={}, indent={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.bytes_written });
     assert(node.getTypeAsEnum(NodeType) == .body);
 
     // Process all children in the body
@@ -372,7 +362,7 @@ pub fn writeBody(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writePassStatement(self: *GdWriter, node: Node) Error!void {
-    log.debug("writePassStatement: indent={}, line_width={}, bytes_written={}", .{ self.context.indent_level, self.getCurrentLineWidth(), self.bytes_written });
+    log.debug("writePassStatement: indent={}, bytes_written={}", .{ self.context.indent_level, self.bytes_written });
     assert(node.getTypeAsEnum(NodeType) == .pass_statement);
 
     // Indentation is handled by writeBody, just write the statement
@@ -485,7 +475,7 @@ pub fn writeExtendsStatement(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
-    log.debug("writeVariableStatement: children={}, indent={}, line_width={}, text='{s}'", .{ node.childCount(), self.context.indent_level, self.getCurrentLineWidth(), node.text()[0..@min(50, node.text().len)] });
+    log.debug("writeVariableStatement: children={}, indent={}, text='{s}'", .{ node.childCount(), self.context.indent_level, node.text()[0..@min(50, node.text().len)] });
 
     var has_inline_comment = false;
     for (0..node.childCount()) |i| {
@@ -576,7 +566,7 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
-    log.debug("writeFunctionDefinition: children={}, indent={}, line_width={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.getCurrentLineWidth(), self.bytes_written });
+    log.debug("writeFunctionDefinition: children={}, indent={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.bytes_written });
 
     var i: u32 = 0;
 
@@ -801,7 +791,7 @@ pub fn writeForStatement(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeWhileStatement(self: *GdWriter, node: Node) Error!void {
-    log.debug("writeWhileStatement: children={}, indent={}, line_width={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.getCurrentLineWidth(), self.bytes_written });
+    log.debug("writeWhileStatement: children={}, indent={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.bytes_written });
     assert(node.getTypeAsEnum(NodeType) == .while_statement);
 
     var i: u32 = 0;
@@ -1002,43 +992,17 @@ pub fn writeFalse(self: *GdWriter, node: Node) Error!void {
 
 // Expressions and Operations
 pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
-    log.debug("writeBinaryOperator: children={}, current_width={}, max_width={}, text='{s}'", .{ node.childCount(), self.getCurrentLineWidth(), self.context.max_width, node.text()[0..@min(60, node.text().len)] });
+    log.debug("writeBinaryOperator: children={}, text='{s}'", .{ node.childCount(), node.text()[0..@min(60, node.text().len)] });
 
     // Binary expressions have structure: left_expr operator right_expr
     // assert(node.childCount() == 3);
 
-    // Try single-line format first
-    self.writeBinaryOperatorNormal(node) catch |err| switch (err) {
-        Error.MaxWidthExceeded => {
-            log.debug("writeBinaryOperator: switching to multiline due to MaxWidthExceeded", .{});
-            // Fallback to multiline format
-            return self.writeBinaryOperatorMultiline(node);
-        },
-        else => return err,
-    };
-}
-
-fn writeBinaryOperatorNormal(self: *GdWriter, node: Node) Error!void {
     const left = node.child(0).?;
     const op = node.child(1).?;
     const right = node.child(2).?;
 
-    log.debug("writeBinaryOperatorNormal: left='{s}', op='{s}', right='{s}'", .{ left.text()[0..@min(20, left.text().len)], op.text(), right.text()[0..@min(20, right.text().len)] });
+    log.debug("writeBinaryOperator: left='{s}', op='{s}', right='{s}'", .{ left.text()[0..@min(20, left.text().len)], op.text(), right.text()[0..@min(20, right.text().len)] });
 
-    // Check total width that would be consumed by this entire binary expression
-    const full_text = node.text();
-    const current_width = self.getCurrentLineWidth();
-    const total_width = current_width + full_text.len;
-
-    log.debug("writeBinaryOperatorNormal: current_width={}, expression_len={}, total_width={}, max_width={}", .{ current_width, full_text.len, total_width, self.context.max_width });
-
-    // If the entire expression would exceed the limit, trigger multiline mode
-    if (total_width > self.context.max_width) {
-        log.debug("writeBinaryOperatorNormal: triggering multiline format due to width exceeded", .{});
-        return Error.MaxWidthExceeded;
-    }
-
-    // Use unchecked writes since we've already verified the total width
     // Write left operand
     var cursor = left.cursor();
     try formatter.depthFirstWalk(&cursor, self);
@@ -1051,33 +1015,6 @@ fn writeBinaryOperatorNormal(self: *GdWriter, node: Node) Error!void {
     // Write right operand
     cursor = right.cursor();
     try formatter.depthFirstWalk(&cursor, self);
-}
-
-fn writeBinaryOperatorMultiline(self: *GdWriter, node: Node) !void {
-    const left = node.child(0).?;
-    const op = node.child(1).?;
-    const right = node.child(2).?;
-
-    log.debug("writeBinaryOperatorMultiline: formatting as multiline, indent={}", .{self.context.indent_level});
-
-    // Write left operand
-    var cursor = left.cursor();
-    try formatter.depthFirstWalk(&cursor, self);
-
-    // Write operator without trailing space
-    try self.write(" ", .{});
-    try self.write(op.text(), .{});
-
-    // Newline and indented right operand
-    try self.writeNewline();
-    try self.writeIndent(.{ .new_line = false });
-    try self.writeIndent(.{ .new_line = false }); // Double indent for continuation
-    log.debug("writeBinaryOperatorMultiline: after indentation, line_width={}", .{self.getCurrentLineWidth()});
-
-    // Write right operand
-    cursor = right.cursor();
-    try formatter.depthFirstWalk(&cursor, self);
-    log.debug("writeBinaryOperatorMultiline: completed multiline format", .{});
 }
 
 pub fn writeComparisonOperator(self: *GdWriter, node: Node) Error!void {
