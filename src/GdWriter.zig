@@ -142,6 +142,26 @@ fn findClosingNode(opening_node: ?Node, opening_type: NodeType, closing_type: No
     return null;
 }
 
+/// Scan the source text between two byte positions for line comments (#)
+/// that tree-sitter didn't include as child nodes. Emits any found comments
+/// as inline comments (space + comment text). Follows the same pattern as
+/// Zig's renderComments which scans gaps between tokens for "//".
+fn renderGapComments(self: *GdWriter, source: []const u8, start: u32, end: u32) Error!void {
+    if (end <= start) return;
+    const gap = source[start..end];
+    var index: usize = 0;
+    while (std.mem.indexOfPos(u8, gap, index, "#")) |hash_pos| {
+        const rest = gap[hash_pos..];
+        const newline_pos = std.mem.indexOfScalar(u8, rest, '\n') orelse rest.len;
+        const comment_text = std.mem.trimRight(u8, rest[0..newline_pos], " \t\r");
+        try self.write(" ", .{});
+        try self.write(comment_text, .{});
+        // When no newline exists, newline_pos == rest.len so index may exceed
+        // gap.len. indexOfPos handles this by returning null, ending the loop.
+        index = hash_pos + newline_pos + 1;
+    }
+}
+
 fn hasComment(node: ?Node) bool {
     if (node == null) return false;
 
@@ -602,6 +622,11 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
                 .array => {
                     try self.writeArray(c);
                 },
+                .dictionary => {
+                    // Explicit routing needed: the else branch writes raw text,
+                    // bypassing the compile-time dispatch in depthFirstWalk.
+                    try self.writeDictionary(c);
+                },
                 else => {
                     const node_text = c.text();
 
@@ -982,7 +1007,7 @@ fn writeDelimitedList(self: *GdWriter, node: Node, config: DelimitedListConfig) 
         return;
     }
 
-    // trailing comma?
+    // trailing comma, comments, or already multiline in source?
     const multiline_mode = blk: {
         const has_trailing_comma =
             if (node.child(node.childCount() - 1)) |cn|
@@ -990,19 +1015,27 @@ fn writeDelimitedList(self: *GdWriter, node: Node, config: DelimitedListConfig) 
             else
                 false;
 
-        break :blk has_trailing_comma or hasComment(node);
+        const source_is_multiline = node.startPoint().row != node.endPoint().row;
+
+        break :blk has_trailing_comma or hasComment(node) or source_is_multiline;
     };
 
     try self.write(config.open, .{});
 
     const child_count = node.childCount();
 
+    const source = node.tree.input;
+
     if (multiline_mode) {
-        // Check for inline comment on the opening delimiter line
+        // Check for inline comment on the opening delimiter line:
+        // first as a child node, then in the gap between { and the first inner child.
         if (child_count > 2) {
             const first_inner = node.child(1).?;
             if (first_inner.getTypeAsEnum(NodeType) == .comment and isInlineComment(first_inner)) {
                 try self.handleComment(first_inner);
+            } else {
+                const open_node = node.child(0).?;
+                try self.renderGapComments(source, open_node.endByte(), first_inner.startByte());
             }
         }
         try self.writeNewline();
@@ -1036,12 +1069,15 @@ fn writeDelimitedList(self: *GdWriter, node: Node, config: DelimitedListConfig) 
         if (current_node_type == .@",") {
             try self.write(",", .{});
 
-            // Look ahead for an inline comment after the comma
+            // Look ahead for an inline comment after the comma:
+            // first as a child node, then in the gap between , and the next child.
             if (i + 1 < child_count - 1) {
                 const next = node.child(i + 1).?;
                 if (next.getTypeAsEnum(NodeType) == .comment and isInlineComment(next)) {
                     try self.handleComment(next);
                     i += 1;
+                } else {
+                    try self.renderGapComments(source, current_node.endByte(), next.startByte());
                 }
             }
 
@@ -1066,12 +1102,15 @@ fn writeDelimitedList(self: *GdWriter, node: Node, config: DelimitedListConfig) 
             try self.writeTrimmed(current_node);
         }
 
-        // Look ahead for an inline comment after this element
+        // Look ahead for an inline comment after this element:
+        // first as a child node, then in the gap between this element and the next child.
         if (i + 1 < child_count - 1) {
             const next = node.child(i + 1).?;
             if (next.getTypeAsEnum(NodeType) == .comment and isInlineComment(next)) {
                 try self.handleComment(next);
                 i += 1;
+            } else {
+                try self.renderGapComments(source, current_node.endByte(), next.startByte());
             }
         }
 
@@ -1112,13 +1151,37 @@ pub fn writeFloat(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeDictionary(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement dictionary literals {key: value} with proper spacing
-    try self.writeTrimmed(node);
+    log.debug("writeDictionary: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
+    try debug.assertNodeIsType(.dictionary, node);
+    try self.writeDelimitedList(node, .{ .open = "{", .close = "}" });
 }
 
 pub fn writePair(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement key-value pairs in dictionaries
-    try self.writeTrimmed(node);
+    log.debug("writePair: children={}, text='{s}'", .{ node.childCount(), node.text()[0..@min(40, node.text().len)] });
+    try debug.assertNodeIsType(.pair, node);
+
+    // Pair structure: key separator value
+    // Colon pairs:  'a' : 1   → 'a': 1
+    // Equals pairs: a = 1     → a = 1
+    for (0..node.childCount()) |i| {
+        const child = node.child(@intCast(i)).?;
+        const child_type = child.getTypeAsEnum(NodeType);
+
+        if (child_type == .@":") {
+            // Colon separator: no space before, space after
+            try self.write(": ", .{});
+        } else if (child_type == .@"=") {
+            // Equals separator: space before and after
+            try self.write(" = ", .{});
+        } else {
+            // Key or value expression
+            const bytes_before = self.bytes_written;
+            try formatter.renderNode(child, self);
+            if (self.bytes_written == bytes_before) {
+                try self.writeTrimmed(child);
+            }
+        }
+    }
 }
 
 pub fn writeTrue(self: *GdWriter, node: Node) Error!void {

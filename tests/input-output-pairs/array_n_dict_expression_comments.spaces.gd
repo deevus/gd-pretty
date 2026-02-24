@@ -4,9 +4,9 @@ class X:
             1, # b
             2, # c
         ] # d
-        var y = {                # q
-            'x': 1,                # w
-            'y': 2,                # e
+        var y = { # q
+            'x': 1, # w
+            'y': 2, # e
         } # r
         var sut
         var Config

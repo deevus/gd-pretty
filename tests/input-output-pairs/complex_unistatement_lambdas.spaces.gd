@@ -11,5 +11,8 @@ func baz():
         func(): pass,
         func():pass,
     ]
-    var x3 = {'x':func(): pass,'y':func(): pass}
-    var x4 = {'x':func(): pass,'y':func(): pass,}
+    var x3 = {'x': func(): pass, 'y': func(): pass}
+    var x4 = {
+        'x': func(): pass,
+        'y': func(): pass,
+    }
