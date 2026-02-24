@@ -1,5 +1,5 @@
 class SubClass:
-	
+	enum NamedEnum {A, B, C}
 var a: Array[int]
 var b: Array[int] = [1]
 const C:Array[int]=[1]
