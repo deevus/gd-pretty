@@ -53,6 +53,7 @@ func actual_params():
 		func():
 			var y = 1
 			return y)
+
 func arrays():
 	var x1 = [func():
 		var x = 1
@@ -87,6 +88,7 @@ func arrays():
 			print(x), func():
 			var x = 1
 			return x]
+
 func dicts():
 	var x1 = {'a':func():
 		var x = 1
@@ -147,6 +149,7 @@ func dicts():
 			var x = 1
 			return x
 	}
+
 func nested():
 	var x1 = func():
 		var x1r = func():

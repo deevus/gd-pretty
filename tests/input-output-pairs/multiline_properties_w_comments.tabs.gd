@@ -15,6 +15,7 @@ var p3 :
 var p4 :
 	get = __get,
 	set = __set
+
 var p5 :
 	get: pass
 var p6 :
@@ -25,6 +26,7 @@ var p7 :
 var p8 :
 	set(_x):
 		pass
+
 # h
 var p9 :							# inline f
 	# i
@@ -50,7 +52,9 @@ var p10 :						# inline i
 # s
 # t
 # u
+
 func __get():
 	return 1
+
 func __set(v):
 	pass

@@ -1,6 +1,7 @@
 class A:
 	class B:
 		pass
+
 class X:
 	signal some
 	signal some2()
@@ -14,7 +15,9 @@ class X:
 	var q: int
 	var w := 1
 	var xx: A.B
+
 class Y:
 	extends X
+
 class Z extends X:
 	pass
