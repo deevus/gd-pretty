@@ -1,3 +1,3 @@
 extends Node
 
-var a = {"啊":1}
+var a = {"啊": 1}

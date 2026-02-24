@@ -15,7 +15,7 @@ None currently.
 - **Current State**: All node types have stub methods that preserve original text
 - **Goal**: Replace stubs with proper formatting implementations for:
   - **Control flow**: if/elif/else, for loops, match statements (proper indentation)
-  - **Literals**: strings, numbers, booleans, arrays, dictionaries (spacing and formatting)
+  - **Literals**: strings, numbers, booleans (spacing and formatting)
   - **Operators**: binary operators, comparisons, assignments (consistent spacing)
   - **Comments**: proper preservation and positioning
 - **Files**: `src/GdWriter.zig`, `src/enums.zig`

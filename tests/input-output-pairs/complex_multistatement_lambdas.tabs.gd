@@ -55,97 +55,126 @@ func actual_params():
 			return y)
 
 func arrays():
-	var x1 = [func():
+	var x1 = [
+		func():
 		var x = 1
-		return x]
-	var x2 = [func():
+		return x
+	]
+	var x2 = [
+		func():
 		var x = 1
-		return x]
-	var x3 = [func():
+		return x
+	]
+	var x3 = [
+		func():
 		var x = 1
-		return x, func():
+		return x,
+		func():
 			var x = 1
-			return x]
-	var x4 = [func():
+			return x
+	]
+	var x4 = [
+		func():
 		var x = 1
-		return x, func():
+		return x,
+		func():
 			var x = 1
-			return x]
-	var x5 = [func():
+			return x
+	]
+	var x5 = [
+		func():
 		var x = 1
-		return x, func():
+		return x,
+		func():
 			var x = 1
-			return x]
-	var x6 = [func():
+			return x
+	]
+	var x6 = [
+		func():
 		var x = 1
 		if x > 0:
-			print(x), func():
+			print(x),
+		func():
 			var x = 1
-			return x]
-	var x7 = [func():
+			return x
+	]
+	var x7 = [
+		func():
 		var x = 1
 		if x > 0:
-			print(x), func():
+			print(x),
+		func():
 			var x = 1
-			return x]
+			return x
+	]
 
 func dicts():
-	var x1 = {'a':func():
-		var x = 1
-		return x}
-	var x2 = {'a':func():
+	var x1 = {
+		'a': func():
 		var x = 1
 		return x
 	}
-	var x3 = {'a':func():
+	var x2 = {
+		'a': func():
 		var x = 1
-		return x,'b':func():
-			var x = 1
-			return x
+		return x
 	}
-	var x4 = {'a':func():
+	var x3 = {
+		'a': func():
 		var x = 1
 		return x,
-		'b':func():
+		'b': func():
 			var x = 1
 			return x
 	}
-	var x5 = {'a':func():
+	var x4 = {
+		'a': func():
 		var x = 1
-		return x,'b':
-			func():
+		return x,
+		'b': func():
+			var x = 1
+			return x
+	}
+	var x5 = {
+		'a': func():
+		var x = 1
+		return x,
+		'b': func():
 				var x = 1
 				return x
 	}
-	var x6 = {'a':func():
+	var x6 = {
+		'a': func():
 		var x = 1
 		return x,
-
-		'b':func():
+		'b': func():
 			var x = 1
 			return x
 	}
-	var x7 = {'a':func():
-		var x = 1
-		if x > 0:
-			print(x),'b':func():
-			var x = 1
-			return x
-	}
-	var x8 = {'a':func():
+	var x7 = {
+		'a': func():
 		var x = 1
 		if x > 0:
 			print(x),
-		'b':func():
+		'b': func():
 			var x = 1
 			return x
 	}
-	var x9 = {'a':func():
+	var x8 = {
+		'a': func():
 		var x = 1
 		if x > 0:
 			print(x),
-
-		'b':func():
+		'b': func():
+			var x = 1
+			return x
+	}
+	var x9 = {
+		'a': func():
+		var x = 1
+		if x > 0:
+			print(x),
+		'b': func():
 			var x = 1
 			return x
 	}

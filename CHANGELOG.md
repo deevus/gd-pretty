@@ -2,10 +2,23 @@
 
 This file tracks completed improvements and changes to the gd-pretty GDScript formatter.
 
-## [Unreleased] - September 16, 2025
+## [Unreleased] - February 24, 2026
 
 ### Added
-- **🎉 While Loop Support** - Implemented complete while loop formatting functionality
+- **Dictionary Formatting** - Implemented `writeDictionary` and `writePair` for proper dictionary literal formatting
+  - Colon pairs formatted as `key: value` with space after colon
+  - Equals pairs formatted as `key = value` with spaces around equals
+  - Trailing comma triggers multiline expansion (consistent with array behavior via `writeDelimitedList`)
+  - Files: `src/GdWriter.zig` (new `writeDictionary`, `writePair` implementations, dictionary routing in `writeVariableStatement`)
+  - Test: Added `force_multiline_dict.desired.spaces.gd` and `force_multiline_dict.desired.tabs.gd`
+- **Gap Comment Scanning** - `writeDelimitedList` now scans source byte gaps between AST children for comments not in the tree-sitter child list
+  - Inspired by Zig's `renderComments` approach: scan for `#` between token positions and emit discovered comments
+  - Fixes silent comment loss in dictionaries where tree-sitter's GDScript grammar doesn't include inline comments as child nodes
+  - Applied generically after opening delimiters, commas, and elements
+  - Files: `src/GdWriter.zig` (new `renderGapComments` function, integrated into `writeDelimitedList`)
+- **Source Multiline Preservation** - `writeDelimitedList` now preserves multiline formatting from original source, even without trailing commas
+  - Applies to both arrays and dictionaries
+- **While Loop Support** - Implemented complete while loop formatting functionality
   - **Problem**: While loops were completely omitted from formatter output, breaking GDScript functionality
   - **Solution**: Added `while_statement` to `GdNodeType` enum and implemented full `writeWhileStatement` method
   - **Implementation**: Complete while loop handling with proper keyword formatting, condition expression processing, colon placement, and body indentation
@@ -21,17 +34,7 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
   - **Result**: Robust test coverage ensuring while loop formatting works correctly across all use cases
   - **Impact**: Addresses PR review feedback for more thorough testing of while loop functionality
 
-### Fixed
-- **🐛 Blank Lines After Line Comments** - Fixed erroneous blank line insertion after standalone line comments
-  - **Problem**: Formatter was inserting unnecessary blank lines after line comments within function bodies
-  - **Solution**: Implemented source-aware spacing preservation using `hasBlankLinesBetween()` helper function
-  - **Implementation**: Enhanced `writeBody()` logic in `src/GdWriter.zig` to distinguish between formatter-added and user-intended spacing
-  - **Result**: Line comments now format correctly while preserving original source spacing intentions
-  - **Test Coverage**: Updated 7 test files including `function_comments_comprehensive`, `body_comment_comprehensive`, and `comment_corner_cases`
-  - **Impact**: Improved comment formatting quality without breaking existing user formatting conventions
-
-### Added
-- **🎉 MAJOR FEATURE: Complete Comment-Aware Processing** - Full support for GDScript comments in all contexts
+- **Complete Comment-Aware Processing** - Full support for GDScript comments in all contexts
   - **Inline Comments**: `class X: # comment` and `func foo(): # comment` properly positioned
   - **Standalone Comments**: Comments between statements with correct indentation
   - **Body Comments**: Comments within class and function bodies at any nesting level
@@ -42,6 +45,12 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
   - **Files Enhanced**: `src/GdWriter.zig` with `handleComment()`, `isInlineComment()`, and enhanced `writeClassDefinition`, `writeFunctionDefinition`, `writeBody`
   - **Test Coverage**: Comprehensive test cases including `function_comments_comprehensive`, `body_comment_comprehensive`, `inline_comments_on_compound_stmts`
   - **Impact**: GDScript files with comments now format beautifully while preserving all comment content and associations
+
+### Fixed
+- **Trailing Newline in Test Runner** - Test output files now include a trailing newline, matching the real formatter behavior
+  - Files: `src/main.zig`
+- **Blank Lines After Line Comments** - Fixed erroneous blank line insertion after standalone line comments
+  - Implemented source-aware spacing preservation using `hasBlankLinesBetween()` helper function
 
 ## [0.0.2] - July 25, 2025
 
