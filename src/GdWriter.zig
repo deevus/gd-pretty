@@ -79,8 +79,6 @@ fn writeIndentLevel(self: *GdWriter, indent_level: u32) Error!void {
 }
 
 // Trims leading and trailing whitespace from text
-// Note: This function is duplicated in type.zig for local use there.
-// Kept separate rather than shared utility to avoid circular dependencies.
 fn trimWhitespace(text: []const u8) []const u8 {
     return std.mem.trim(u8, text, &std.ascii.whitespace);
 }
@@ -238,7 +236,12 @@ pub fn writeAttribute(self: *GdWriter, node: Node) Error!void {
 pub fn writeSubscript(self: *GdWriter, node: Node) Error!void {
     for (0..node.childCount()) |i| {
         const child = node.child(@intCast(i)) orelse return Error.MissingRequiredChild;
-        try self.writeTrimmed(child);
+        // renderNode is a no-op for unregistered node types; fall back to verbatim text
+        const bytes_before = self.bytes_written;
+        try formatter.renderNode(child, self);
+        if (self.bytes_written == bytes_before) {
+            try self.writeTrimmed(child);
+        }
     }
 }
 
@@ -1212,9 +1215,14 @@ pub fn writeConditionalExpression(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeAttributeCall(self: *GdWriter, node: Node) Error!void {
-    // child 0: method name (identifier)
+    // child 0: method name (identifier, subscript, or nested call)
     const method = node.child(0) orelse return Error.MissingRequiredChild;
-    try self.writeTrimmed(method);
+    // renderNode is a no-op for unregistered node types; fall back to verbatim text
+    const bytes_before = self.bytes_written;
+    try formatter.renderNode(method, self);
+    if (self.bytes_written == bytes_before) {
+        try self.writeTrimmed(method);
+    }
     // child 1: arguments
     const args = node.child(1) orelse return Error.MissingRequiredChild;
     try self.writeArguments(args);
