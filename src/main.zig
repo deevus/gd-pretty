@@ -163,6 +163,9 @@ test "input output pairs" {
 
     var buf: [1024]u8 = undefined;
 
+    var desired_match_count: u32 = 0;
+    var desired_total_count: u32 = 0;
+
     var it = dir.iterateAssumeFirstIteration();
     while (try it.next()) |entry| {
         if (entry.kind != .file) continue;
@@ -176,29 +179,66 @@ test "input output pairs" {
             var tree = try ts_parser.parseFile(allocator, in_file);
             var cursor = tree.rootNode().cursor();
 
+            const base_name = entry.name[0 .. entry.name.len - 6];
+
             for ([_]IndentType{ .tabs, .spaces }) |indent_style| {
+                const style_name = @tagName(indent_style);
                 const out_file_name = try std.fmt.allocPrint(allocator, "{s}.{s}.gd", .{
-                    entry.name[0 .. entry.name.len - 6],
-                    @tagName(indent_style),
-                });
-                var out_file = try dir.createFile(out_file_name, .{});
-                defer out_file.close();
-
-                var out_file_writer = out_file.writer(&buf);
-                const writer = &out_file_writer.interface;
-
-                var gd_writer: GdWriter = .init(.{
-                    .writer = writer,
-                    .allocator = allocator,
-                    .whitespace_config = .{
-                        .style = indent_style,
-                    },
+                    base_name,
+                    style_name,
                 });
 
-                try formatter.depthFirstWalk(&cursor, &gd_writer);
-                try writer.flush();
+                // Write output file in a scope so it's closed before we re-read it
+                {
+                    var out_file = try dir.createFile(out_file_name, .{});
+                    defer out_file.close();
+
+                    var out_file_writer = out_file.writer(&buf);
+                    const writer = &out_file_writer.interface;
+
+                    var gd_writer: GdWriter = .init(.{
+                        .writer = writer,
+                        .allocator = allocator,
+                        .whitespace_config = .{
+                            .style = indent_style,
+                        },
+                    });
+
+                    try formatter.depthFirstWalk(&cursor, &gd_writer);
+                    try writer.flush();
+                }
+
+                // Compare with desired file if it exists
+                const desired_file_name = try std.fmt.allocPrint(allocator, "{s}.desired.{s}.gd", .{
+                    base_name,
+                    style_name,
+                });
+
+                if (dir.openFile(desired_file_name, .{})) |desired_file| {
+                    defer desired_file.close();
+                    const desired_content = try desired_file.readToEndAlloc(allocator, 1024 * 1024);
+
+                    const actual_file = try dir.openFile(out_file_name, .{});
+                    defer actual_file.close();
+                    const actual_content = try actual_file.readToEndAlloc(allocator, 1024 * 1024);
+
+                    if (std.mem.eql(u8, desired_content, actual_content)) {
+                        desired_match_count += 1;
+                        std.debug.print("  DESIRED MATCH: {s}\n", .{desired_file_name});
+                    } else {
+                        std.debug.print("  DESIRED MISMATCH: {s}\n", .{desired_file_name});
+                    }
+                    desired_total_count += 1;
+                } else |_| {}
             }
         }
+    }
+
+    if (desired_total_count > 0) {
+        std.debug.print("\nDesired output progress: {}/{} matching\n", .{
+            desired_match_count,
+            desired_total_count,
+        });
     }
 }
 
