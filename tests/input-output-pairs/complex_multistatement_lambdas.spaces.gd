@@ -56,77 +56,65 @@ func actual_params():
 func arrays():
     var x1 = [func():
         var x = 1
-        return x] 
+        return x]
     var x2 = [func():
         var x = 1
-        return x
-    ] 
+        return x]
     var x3 = [func():
         var x = 1
-        return x,func():
+        return x, func():
             var x = 1
-            return x
-    ] 
+            return x]
     var x4 = [func():
         var x = 1
-        return x,
-        func():
+        return x, func():
             var x = 1
-            return x
-    ] 
+            return x]
     var x5 = [func():
         var x = 1
-        return x,
-
-        func():
+        return x, func():
             var x = 1
-            return x
-    ] 
+            return x]
     var x6 = [func():
         var x = 1
         if x > 0:
-            print(x),
-        func():
+            print(x), func():
             var x = 1
-            return x
-    ] 
+            return x]
     var x7 = [func():
         var x = 1
         if x > 0:
-            print(x),
-
-        func():
+            print(x), func():
             var x = 1
-            return x
-    ] 
+            return x]
 func dicts():
     var x1 = {'a':func():
         var x = 1
-        return x} 
+        return x}
     var x2 = {'a':func():
         var x = 1
         return x
-    } 
+    }
     var x3 = {'a':func():
         var x = 1
         return x,'b':func():
             var x = 1
             return x
-    } 
+    }
     var x4 = {'a':func():
         var x = 1
         return x,
         'b':func():
             var x = 1
             return x
-    } 
+    }
     var x5 = {'a':func():
         var x = 1
         return x,'b':
             func():
                 var x = 1
                 return x
-    } 
+    }
     var x6 = {'a':func():
         var x = 1
         return x,
@@ -134,14 +122,14 @@ func dicts():
         'b':func():
             var x = 1
             return x
-    } 
+    }
     var x7 = {'a':func():
         var x = 1
         if x > 0:
             print(x),'b':func():
             var x = 1
             return x
-    } 
+    }
     var x8 = {'a':func():
         var x = 1
         if x > 0:
@@ -149,7 +137,7 @@ func dicts():
         'b':func():
             var x = 1
             return x
-    } 
+    }
     var x9 = {'a':func():
         var x = 1
         if x > 0:
@@ -158,19 +146,19 @@ func dicts():
         'b':func():
             var x = 1
             return x
-    } 
+    }
 func nested():
     var x1 = func():
         var x1r = func():
             var x = 1
             return x
-        return x1r 
+        return x1r
 
     var x2 = func():
         var x2r = func():
             pass
             pass
-        pass 
+        pass
 
     var x3 = func():
         var x3r = func():
@@ -178,7 +166,7 @@ func nested():
                 pass
                 pass
             pass
-        pass 
+        pass
 
     var x4 = func():
         if true:
@@ -186,7 +174,7 @@ func nested():
                 pass
                 pass
             pass
-        pass 
+        pass
 
     var x5 = func():
         if true:
@@ -196,7 +184,7 @@ func nested():
                     pass
                 pass
             pass
-        pass 
+        pass
 
     var x6 = func():
         if true:
@@ -215,4 +203,4 @@ func nested():
     #     pass
     #     var x = func():
     #         pass
-    #         pass,] 
+    #         pass,]

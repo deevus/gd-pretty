@@ -5,14 +5,14 @@ func test_basic_while_loops():
 		
 
 		# While loop with variable condition
-	var counter = 0 
+	var counter = 0
 	while counter < 10:
 		print(counter)
 		counter += 1
 
 		# While loop with complex boolean condition
-	var running = true 
-	var health = 100 
+	var running = true
+	var health = 100
 	while running and health > 0:
 		health -= 1
 		if health == 50:
@@ -30,8 +30,8 @@ func is_valid() -> bool:
 func process_frame():
 	pass
 class Player:
-	var health: int = 100 
+	var health: int = 100
 
 	func take_damage(amount: int):
 		health -= amount
-var player = Player.new() 
+var player = Player.new()

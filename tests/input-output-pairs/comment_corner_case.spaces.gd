@@ -1,4 +1,4 @@
-var x 
-
-var y 
+var x
+;
+var y
  # xxx

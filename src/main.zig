@@ -140,6 +140,7 @@ fn formatFiles() !void {
         formatter.depthFirstWalk(&cursor, &gd_writer) catch |err| {
             try logging.printErrorAndExit("Error: failed to format file '{s}': {}\n", .{ path, err });
         };
+        try writer.writeByte('\n');
         try writer.flush();
     }
 }

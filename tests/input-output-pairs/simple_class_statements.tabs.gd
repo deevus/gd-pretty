@@ -8,12 +8,12 @@ class X:
 	const a = 1
 	const b := 2
 	const c : int = 3
-	var x 
-	var y = 1 
-	var z: int = 1 
-	var q: int 
-	var w := 1 
-	var xx: A.B 
+	var x
+	var y = 1
+	var z: int = 1
+	var q: int
+	var w := 1
+	var xx: A.B
 class Y:
 	extends X
 class Z extends X:

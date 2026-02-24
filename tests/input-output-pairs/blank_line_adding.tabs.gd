@@ -1,9 +1,9 @@
-var x 
-var y 
+var x
+var y
 func foo():
 	pass
-var q 
-var w 
+var q
+var w
 class X:
 	pass
 	func foo():
@@ -27,8 +27,8 @@ func baz():
 # zzz
 func bat():
 	pass
-var a 
-var b 
+var a
+var b
 # qqq
 class C:
 	pass

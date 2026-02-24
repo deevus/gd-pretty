@@ -1,6 +1,6 @@
 func foo():
     # aaa
-    var x 
+    var x
     # bbb
     if true:
 # ccc

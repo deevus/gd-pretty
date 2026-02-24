@@ -9,7 +9,7 @@ pub const Error = error{
     MissingRequiredChild,
     InvalidNodeStructure,
     OutOfMemory,
-} || Writer.Error;
+} || Writer.Error || if (builtin.mode == .Debug) debug.Error else error{};
 
 writer: *Writer,
 bytes_written: u64 = 0,
@@ -113,6 +113,64 @@ fn write(self: *GdWriter, text: []const u8, options: WriteOptions) Error!void {
     }
 
     log.debug("write: completed, new_bytes_written={}", .{self.bytes_written});
+}
+
+fn findClosingNode(opening_node: ?Node, opening_type: NodeType, closing_type: NodeType) ?Node {
+    if (opening_node == null) {
+        return null;
+    }
+
+    var level: usize = 1;
+    var current_node = opening_node.?.nextSibling();
+
+    while (current_node) |n| {
+        if (n.getTypeAsEnum(NodeType)) |nt| {
+            if (nt == opening_type) {
+                level += 1;
+            } else if (nt == closing_type) {
+                level -= 1;
+
+                if (level == 0) {
+                    return current_node;
+                }
+            }
+        }
+
+        if (current_node) |c| {
+            current_node = c.nextSibling();
+        }
+    }
+
+    return null;
+}
+
+fn hasComment(node: ?Node) bool {
+    if (node == null) return false;
+
+    for (0..node.?.childCount()) |i| {
+        if (node.?.child(i).?.getTypeAsEnum(NodeType) == .comment) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+fn hasInlineComment(node: ?Node) bool {
+    if (node == null) return false;
+
+    for (0..node.?.childCount()) |i| {
+        const current_node = node.?.child(i).?;
+        const previous_node = current_node.prevSibling();
+
+        if (current_node.getTypeAsEnum(NodeType) == .comment) {
+            if (previous_node) |prev| if (prev.endPoint().row == current_node.startPoint().row) {
+                return true;
+            };
+        }
+    }
+
+    return false;
 }
 
 fn isInlineComment(comment_node: Node) bool {
@@ -477,70 +535,71 @@ pub fn writeExtendsStatement(self: *GdWriter, node: Node) Error!void {
 pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
     log.debug("writeVariableStatement: children={}, indent={}, text='{s}'", .{ node.childCount(), self.context.indent_level, node.text()[0..@min(50, node.text().len)] });
 
-    var has_inline_comment = false;
-    for (0..node.childCount()) |i| {
-        const prev_child = if (i > 0) node.child(@intCast(i - 1)) else null;
-        _ = prev_child;
-        const child = node.child(@intCast(i));
-        const next_child = node.child(@intCast(i + 1));
+    var s: usize = 0;
+
+    // annotations (@onready)
+    if (node.child(s).?.getTypeAsEnum(NodeType) == .annotations) {
+        try self.writeTrimmed(node.child(s).?);
+        try self.write(" ", .{});
+        s += 1;
+    }
+
+    // static (optional)
+    if (node.child(s).?.getTypeAsEnum(NodeType) == .static_keyword) {
+        try self.write("static ", .{});
+        s += 1;
+    }
+
+    // var
+    {
+        try debug.assertNodeIsType(.@"var", node.child(s));
+        try self.writeVar(node.child(s).?);
+        try self.write(" ", .{});
+        s += 1;
+    }
+
+    // name
+    {
+        try debug.assertNodeIsType(.name, node.child(s));
+        try self.writeTrimmed(node.child(s).?);
+        s += 1;
+    }
+
+    // type (optional)
+    if (node.child(s)) |c| {
+        if (c.getTypeAsEnum(NodeType) == .@":") {
+            try self.write(": ", .{});
+            s += 1;
+        } else {
+            try self.write(" ", .{});
+        }
+    }
+
+    const child_count = node.childCount();
+    for (s..child_count) |i| {
+        const child = node.child(i);
 
         if (child) |c| {
-            // Check if this is a comment
-            if (c.getTypeAsEnum(NodeType) == .comment) {
-                if (isInlineComment(c)) {
-                    try self.handleComment(c);
-                    has_inline_comment = true;
-                } else {
-                    // Standalone comment - should not happen within a variable statement
-                    try self.handleComment(c);
-                }
-                continue;
-            }
-
-            const nt = c.getTypeAsEnum(enums.GdNodeType) orelse {
+            const nt = c.getTypeAsEnum(NodeType) orelse {
                 log.debug("writeVariableStatement: unknown node type for child {}: '{s}', falling back to trimmed write", .{ i, c.getTypeAsString() });
                 try self.writeTrimmed(c);
                 continue;
             };
 
             switch (nt) {
-                .name => {
-                    const next_child_is_type = blk: {
-                        if (next_child) |nc| {
-                            const nc_type = nc.getTypeAsEnum(enums.GdNodeType) orelse {
-                                log.debug("writeVariableStatement: unknown next_child node type: '{s}'", .{nc.getTypeAsString()});
-                                break :blk false;
-                            };
-
-                            if (nc_type == .@":") {
-                                break :blk true;
-                            }
-                        }
-
-                        break :blk false;
-                    };
-
-                    if (next_child_is_type) {
-                        try self.write(c.text(), .{});
-                    } else {
-                        try self.write(c.text(), .{});
-                        try self.write(" ", .{});
-                    }
-                },
-                .@"var" => {
-                    try self.write("var ", .{});
-                },
                 .@"=" => {
                     try self.write("= ", .{});
                 },
                 .binary_operator => {
-                    // Process binary expressions properly
                     var cursor = c.cursor();
                     try formatter.depthFirstWalk(&cursor, self);
                 },
+                .array => {
+                    try self.writeArray(c);
+                },
                 else => {
-                    // For expressions and other complex nodes, traverse them properly
                     const node_text = c.text();
+
                     // Check if this might be an expression
                     if (std.mem.indexOf(u8, node_text, "+") != null or
                         std.mem.indexOf(u8, node_text, "-") != null or
@@ -551,17 +610,13 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
                         try formatter.depthFirstWalk(&cursor, self);
                     } else {
                         try self.write(c.text(), .{});
-                        try self.write(" ", .{});
+                        if (i + 1 < child_count) {
+                            try self.write(" ", .{});
+                        }
                     }
                 },
             }
         }
-    }
-
-    // Newline handled by container (writeBody/writeSource) unless suppressed for inline comments
-    if (!self.context.suppress_final_newline) {
-        // Only add newline if this statement truly needs one (e.g., for inline comments)
-        // Container will handle regular newlines between statements
     }
 }
 
@@ -674,51 +729,10 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     // Write newline after colon (and inline comment if present)
     try self.writeNewline();
 
-    // body (with comment handling)
-    {
-        var current_index = i;
-        var found_body = false;
-
-        while (current_index < node.childCount()) {
-            const child = node.child(current_index) orelse break;
-
-            const child_type = child.getTypeAsEnum(NodeType) orelse {
-                log.debug("Unknown node type: '{s}', checking if comment", .{child.getTypeAsString()});
-                if (child.getTypeAsEnum(NodeType) == .comment) {
-                    try self.handleComment(child);
-                    current_index += 1;
-                    continue;
-                }
-                log.err("Expected body or comment after function signature, got {s}", .{child.getTypeAsString()});
-                return Error.UnexpectedNodeType;
-            };
-
-            switch (child_type) {
-                .comment => {
-                    try self.handleComment(child);
-                    current_index += 1;
-                    continue;
-                },
-                .body => {
-                    // Create temporary context with increased indentation
-                    const old_indent = self.context.indent_level;
-                    self.context.indent_level += 1;
-                    try self.writeBody(child);
-                    self.context.indent_level = old_indent;
-                    found_body = true;
-                    break;
-                },
-                else => {
-                    log.err("Expected body or comment after function signature, got {s}", .{child.getTypeAsString()});
-                    return Error.UnexpectedNodeType;
-                },
-            }
-        }
-
-        if (!found_body) {
-            return Error.MissingRequiredChild;
-        }
-    }
+    // body
+    self.context.indent_level += 1;
+    try self.writeBody(node.child(i).?);
+    self.context.indent_level -= 1;
 }
 
 pub fn writeReturnStatement(self: *GdWriter, node: Node) Error!void {
@@ -951,8 +965,128 @@ pub fn writeGetNode(self: *GdWriter, node: Node) Error!void {
 
 // Data Types and Literals
 pub fn writeArray(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement array literals [1, 2, 3] with proper spacing
-    try self.writeTrimmed(node);
+    log.debug("writeArray: children={}, indent={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.bytes_written });
+
+    try debug.assertNodeIsType(.array, node);
+
+    // empty array: just the open and close brackets
+    if (node.childCount() == 2) {
+        try self.write("[]", .{});
+        return;
+    }
+
+    // trailing comma?
+    const multiline_mode = blk: {
+        const has_trailing_comma =
+            if (node.child(node.childCount() - 1)) |cn|
+                if (cn.prevSibling()) |prev| prev.getTypeAsEnum(NodeType) == .@"," else false
+            else
+                false;
+
+        break :blk has_trailing_comma or hasComment(node);
+    };
+
+    try self.write("[", .{});
+
+    const child_count = node.childCount();
+
+    if (multiline_mode) {
+        // Check for inline comment on the opening bracket line
+        if (child_count > 2) {
+            const first_inner = node.child(1).?;
+            if (first_inner.getTypeAsEnum(NodeType) == .comment and isInlineComment(first_inner)) {
+                try self.handleComment(first_inner);
+            }
+        }
+        try self.writeNewline();
+        self.context.indent_level += 1;
+    }
+
+    // Process children between [ and ]
+    var i: usize = 1;
+    while (i < child_count - 1) : (i += 1) {
+        const current_node = node.child(i).?;
+        const current_node_type = current_node.getTypeAsEnum(NodeType);
+
+        // Skip inline comments — they are handled as look-ahead after
+        // the bracket or comma that precedes them.
+        if (current_node_type == .comment and isInlineComment(current_node)) {
+            continue;
+        }
+
+        // Standalone comments get their own line
+        if (current_node_type == .comment) {
+            if (multiline_mode) {
+                try self.writeIndentLevel(self.context.indent_level);
+            }
+            try self.writeTrimmed(current_node);
+            if (multiline_mode) {
+                try self.writeNewline();
+            }
+            continue;
+        }
+
+        if (current_node_type == .@",") {
+            try self.write(",", .{});
+
+            // Look ahead for an inline comment after the comma
+            if (i + 1 < child_count - 1) {
+                const next = node.child(i + 1).?;
+                if (next.getTypeAsEnum(NodeType) == .comment and isInlineComment(next)) {
+                    try self.handleComment(next);
+                    i += 1;
+                }
+            }
+
+            if (multiline_mode) {
+                try self.writeNewline();
+            } else {
+                try self.write(" ", .{});
+            }
+            continue;
+        }
+
+        // Regular element
+        if (multiline_mode) {
+            try self.writeIndentLevel(self.context.indent_level);
+        }
+
+        // Try formatted rendering; fall back to trimmed text for
+        // unknown node types (e.g. await expressions not yet in enum).
+        const bytes_before = self.bytes_written;
+        try formatter.renderNode(current_node, self);
+        if (self.bytes_written == bytes_before) {
+            try self.writeTrimmed(current_node);
+        }
+
+        // Look ahead for an inline comment after this element
+        if (i + 1 < child_count - 1) {
+            const next = node.child(i + 1).?;
+            if (next.getTypeAsEnum(NodeType) == .comment and isInlineComment(next)) {
+                try self.handleComment(next);
+                i += 1;
+            }
+        }
+
+        // In multiline mode, add newline after elements that aren't
+        // followed by a comma (commas handle their own newlines).
+        if (multiline_mode) {
+            const next_type = if (i + 1 < child_count - 1)
+                node.child(i + 1).?.getTypeAsEnum(NodeType)
+            else
+                null;
+            if (next_type != .@",") {
+                try self.writeNewline();
+            }
+        }
+    }
+
+    if (multiline_mode) {
+        self.context.indent_level -= 1;
+        try self.writeIndentLevel(self.context.indent_level);
+    }
+
+    try self.write("]", .{});
 }
 
 pub fn writeString(self: *GdWriter, node: Node) Error!void {
@@ -1299,6 +1433,8 @@ pub fn writeColonEquals(self: *GdWriter, node: Node) Error!void {
 const std = @import("std");
 const Writer = std.Io.Writer;
 const testing = std.testing;
+
+const builtin = @import("builtin");
 
 const debug = @import("debug.zig");
 const assert = debug.debugAssert;

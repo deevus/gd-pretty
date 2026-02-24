@@ -7,13 +7,56 @@ const NodeTypeMapValue = struct {
     write_fn: ?WriteFn = null,
 };
 
+const symbol_node_type_names = std.StaticStringMap([]const u8).initComptime(.{
+    .{ ":=", "infer_assign" },
+    .{ "@", "at" },
+    .{ "(", "left_paren" },
+    .{ ")", "right_paren" },
+    .{ "[", "left_bracket" },
+    .{ "]", "right_bracket" },
+    .{ "{", "left_brace" },
+    .{ "}", "right_brace" },
+    .{ ",", "comma" },
+    .{ ".", "dot" },
+    .{ ":", "colon" },
+    .{ ";", "semicolon" },
+    .{ "+", "plus" },
+    .{ "+=", "plus_assign" },
+    .{ "-", "minus" },
+    .{ "*", "star" },
+    .{ "/", "slash" },
+    .{ "%", "percent" },
+    .{ "<", "less" },
+    .{ ">", "greater" },
+    .{ "<=", "less_equal" },
+    .{ ">=", "greater_equal" },
+    .{ "==", "equal" },
+    .{ "!=", "not_equal" },
+    .{ "=", "assign" },
+    .{ "&&", "and" },
+    .{ "||", "or" },
+    .{ "!", "not" },
+    .{ "\"", "quote" },
+    .{ "->", "arrow" },
+});
+
+fn nodeTypeTagNameFriendly(nt: anytype) []const u8 {
+    const nt_str = switch (@TypeOf(nt)) {
+        []u8, []const u8, [:0]u8, [:0]const u8 => nt,
+        else => @tagName(nt),
+    };
+
+    return symbol_node_type_names.get(nt_str) orelse nt_str;
+}
+
 const node_type_map = std.static_string_map.StaticStringMap(NodeTypeMapValue).initComptime(blk: {
     @setEvalBranchQuota(150_000);
 
     const enum_fields = std.meta.fieldNames(GdNodeType);
     var result: [enum_fields.len]struct { []const u8, NodeTypeMapValue } = undefined;
 
-    for (enum_fields, 0..) |field_name, i| {
+    for (enum_fields, 0..) |raw_field_name, i| {
+        const field_name = nodeTypeTagNameFriendly(raw_field_name);
         var buf: ["write_".len + field_name.len]u8 = undefined;
         @memcpy(&buf, "write_" ++ field_name);
         const write_fn = case.comptimeTo(.camel, &buf) catch std.debug.panic("Failed to convert field name to camel case", {});
@@ -37,6 +80,11 @@ const node_type_map = std.static_string_map.StaticStringMap(NodeTypeMapValue).in
     break :blk result;
 });
 
+pub fn renderNode(node: ts.TSNode, writer: *GdWriter) GdWriter.Error!void {
+    var cursor = node.cursor();
+    try depthFirstWalk(&cursor, writer);
+}
+
 pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, gd_writer: *GdWriter) GdWriter.Error!void {
     const current_node = cursor.currentNode();
     const node_type = current_node.getTypeAsEnum(GdNodeType);
@@ -45,7 +93,7 @@ pub fn depthFirstWalk(cursor: *ts.TSTreeCursor, gd_writer: *GdWriter) GdWriter.E
 
     if (node_type) |nt| {
         var handled = false;
-        const tag_name = @tagName(nt);
+        const tag_name = nodeTypeTagNameFriendly(nt);
 
         if (node_type_map.get(tag_name)) |handler| if (handler.exists) {
             try handler.write_fn.?(gd_writer, current_node);
@@ -75,7 +123,7 @@ fn printTreeRecursive(root: ts.TSNode, writer: anytype, depth: usize) !void {
     try writer.writeAll("\n");
 
     for (0..root.childCount()) |i| {
-        const child = root.child(@intCast(i)) orelse return; // Skip invalid children
+        const child = root.child(i) orelse return; // Skip invalid children
         try printTreeRecursive(child, writer, depth + 1);
     }
 }

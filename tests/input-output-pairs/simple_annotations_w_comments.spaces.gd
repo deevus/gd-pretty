@@ -4,12 +4,12 @@
 extends Node
 # b
 # c
-var a 
+var a
 # d
 @onready
  # inline b
 # e
-var b 
+var b
  # inline c
 # f
 @onready
@@ -17,13 +17,13 @@ var b
 @export_range(1, 100, 1, "or_greater")
  # inline d
 # h
-var c: int = 50 
+var c: int = 50
 # i
 class Foo:
     extends Node
     # j
-    @onready var d  # inline e
+    @onready var d # inline e
     # k
     @onready # inline f
     # l
-    var e 
+    var e

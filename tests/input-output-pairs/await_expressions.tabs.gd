@@ -8,5 +8,8 @@ func coroutine2():
 func foo():
 	await get_tree().process_frame
 	var x = int(await coroutine([]) is int) + 1
-	var y = [1,await coroutine([1,2,]),] 
+	var y = [
+		1,
+		await coroutine([1,2,]),
+	]
 	await await coroutine2()

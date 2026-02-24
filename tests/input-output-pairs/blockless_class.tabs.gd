@@ -1,9 +1,9 @@
-var a 
+var a
 class X:
-	var b 
-	
-	var c 
-var d 
+	var b
+	;
+	var c
+var d
 class Y:
-	var e 
-var f 
+	var e
+var f

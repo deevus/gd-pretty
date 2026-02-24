@@ -3,4 +3,4 @@ class X:
         var x = """aaa
         bbb
         ccc
-        """ 
+        """

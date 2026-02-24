@@ -5,13 +5,13 @@ class X:
 
 	func bar():
 		# xxx
-		var x = '##' 
+		var x = '##'
 		# yyy
-		var y = "##" 
+		var y = "##"
 		# zzz
 		# """ '''
 		var z = """
-		#""" 
+		#"""
 		# qqq
-		var w 
+		var w
 		# www

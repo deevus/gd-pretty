@@ -12,7 +12,7 @@ class_name Aclassname
 )
  # inline f
 # d
-var a 
+var a
  # inline g
 # e
 # f
@@ -30,4 +30,4 @@ var a
 )
  # inline k
 # h
-var b 
+var b

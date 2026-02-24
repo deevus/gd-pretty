@@ -2,36 +2,36 @@
 var p1 :							# inline a
 	# b
 	set = __set					# inline b
-	# c 
+	# c
 # d
 var p2 :							# inline c
 	# e
 	set = __set,				# inline d
 	# f
 	get = __get					# inline e
-	# g 
+	# g
 var p3 :
-	get = __get 
+	get = __get
 var p4 :
 	get = __get,
-	set = __set 
+	set = __set
 var p5 :
-	get: pass 
+	get: pass
 var p6 :
 	get:
-		pass 
+		pass
 var p7 :
-	set(_x): pass 
+	set(_x): pass
 var p8 :
 	set(_x):
-		pass 
+		pass
 # h
 var p9 :							# inline f
 	# i
 	set(_x): pass				# inline g
 	# j
 	get: return 1				# inline h
-	# k 
+	# k
 # l
 var p10 :						# inline i
 	# m

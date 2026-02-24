@@ -67,8 +67,8 @@ pub inline fn parent(self: TSNode) ?TSNode {
     return self.nodeOrNull(ffi.ts_node_parent(self.handle));
 }
 
-pub inline fn child(self: TSNode, index: u32) ?TSNode {
-    return self.nodeOrNull(ffi.ts_node_child(self.handle, index));
+pub inline fn child(self: TSNode, index: usize) ?TSNode {
+    return self.nodeOrNull(ffi.ts_node_child(self.handle, @intCast(index)));
 }
 
 pub inline fn isNamed(self: TSNode) bool {
@@ -79,8 +79,8 @@ pub inline fn namedChildCount(self: TSNode) usize {
     return @intCast(ffi.ts_node_named_child_count(self.handle));
 }
 
-pub inline fn namedChild(self: TSNode, index: u32) ?TSNode {
-    return self.nodeOrNull(ffi.ts_node_named_child(self.handle, index));
+pub inline fn namedChild(self: TSNode, index: usize) ?TSNode {
+    return self.nodeOrNull(ffi.ts_node_named_child(self.handle, @intCast(index)));
 }
 
 pub inline fn nextNamedSibling(self: TSNode) ?TSNode {
@@ -104,12 +104,16 @@ pub fn getTypeAsEnum(self: TSNode, comptime E: type) ?E {
     return std.meta.stringToEnum(E, slice);
 }
 
-pub inline fn equals(self: TSNode, other: TSNode) bool {
+pub inline fn eql(self: TSNode, other: TSNode) bool {
     return ffi.ts_node_eq(self.handle, other.handle);
 }
 
 pub inline fn toString(self: TSNode) []const u8 {
     return std.mem.span(ffi.ts_node_string(self.handle));
+}
+
+pub fn format(self: TSNode, writer: *Writer) Writer.Error!void {
+    try writer.writeAll(self.toString());
 }
 
 pub inline fn symbol(self: TSNode) ffi.TSSymbol {
@@ -129,3 +133,5 @@ pub fn firstChildOfType(self: TSNode, comptime enum_value: anytype) !?TSNode {
 
     return null;
 }
+
+const Writer = std.Io.Writer;

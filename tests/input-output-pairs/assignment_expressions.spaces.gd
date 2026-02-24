@@ -1,6 +1,6 @@
 class X:
     func foo(z):
-        var x 
+        var x
         x = 1
         x += 1
         x**=2

@@ -1,7 +1,7 @@
 class WeaponSystemBullet extends Node:
     pass
 func foo():
-    var bullet_scene 
+    var bullet_scene
     assert(
         (func() -> bool:
             var test_instance: Node = bullet_scene.instantiate()

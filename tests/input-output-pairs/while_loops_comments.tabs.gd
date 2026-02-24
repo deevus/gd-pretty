@@ -6,7 +6,7 @@ func test_while_loops_with_comments():
 
 		# While loop with comment before condition
 		# This is a counter loop
-	var i = 0 
+	var i = 0
 	while i < 10: # Loop until we reach 10
 		print(i) # Print current value
 		i += 1
@@ -14,7 +14,7 @@ func test_while_loops_with_comments():
 		"""
 	Complex while loop with comments everywhere
 	"""
-	var running = true 
+	var running = true
 	while running: # Main game loop
 		# Process input
 		handle_input()

@@ -1,11 +1,11 @@
 # aaa
 pass
-var x 
+var x
 # bbb
-var y 
-var z 
+var y
+var z
  # ccc
 # ddd
-var q 
-var w 
+var q
+var w
 # eee

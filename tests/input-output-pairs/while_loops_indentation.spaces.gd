@@ -1,7 +1,7 @@
 class IndentationTest:
     func test_while_in_class():
         # While loop at class method level
-        var value = 0 
+        var value = 0
         while value < 5:
             print("Class method loop:", value)
             value += 1
@@ -9,7 +9,7 @@ class IndentationTest:
     class InnerClass:
         func inner_method():
             # While loop in nested class
-            var inner_val = 0 
+            var inner_val = 0
             while inner_val < 3:
                 print("Inner class loop:", inner_val)
                 inner_val += 1
@@ -24,9 +24,9 @@ func test_deep_indentation():
                     deep_counter += 1
 
     # While loop with various indented constructs
-    var data = [1, 2, 3] 
+    var data = [1, 2, 3]
     while data > 0:
-        var item = data.pop_back() 
+        var item = data.pop_back()
         if item > 1:
             match item:
                 2:
@@ -46,7 +46,7 @@ func test_lambda_with_while():
     processor.call()
 
     # Lambda inside while loop
-    var iterations = 0 
+    var iterations = 0
     while iterations < 2:
         var temp_func = func(x): return x * 2
         print("Result:", temp_func.call(iterations))

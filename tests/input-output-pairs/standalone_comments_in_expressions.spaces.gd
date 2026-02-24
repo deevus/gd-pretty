@@ -9,24 +9,30 @@ signal s(a, b)
 # ) var x
 func foo():
     # aaa
-    var x = [1,2                # bbb
-    # ccc
-    ] 
+    var x = [
+        1,
+        2 # bbb
+        # ccc
+    ]
     # ddd
     var y = [
         # xxx
-        1,2,3,[
-        # yyy1
-        1,],
+        1,
+        2,
+        3,
+        [
+            # yyy1
+            1,
+        ],
         # yyy2
         4,
         # zzz
-    ] 
+    ]
     var z = {
         # qq3
         1: 2,
         # ww3
-    } 
+    }
 func bar(a, b):
     # rr4
     pass

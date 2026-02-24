@@ -1,28 +1,28 @@
 var p1 :
-    set = __set 
+    set = __set
 var p2 :
     set = __set,
-    get = __get 
+    get = __get
 var p3 :
-    get = __get 
+    get = __get
 var p4 :
     get = __get,
-    set = __set 
+    set = __set
 var p5 :
-    get: pass 
+    get: pass
 var p6 :
     get:
-        pass 
+        pass
 var p7 :
-    set(_x): pass 
+    set(_x): pass
 var p8 :
     set(_x):
-        pass 
+        pass
 var p9 :
     set(_x): pass
-    get: return 1 
+    get: return 1
 var p9x :
-    get(): return 1 
+    get(): return 1
 var p10 :
     get:
         var xyz = 123

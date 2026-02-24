@@ -1,7 +1,7 @@
 func foo():
-	var x1 = func(x): pass;pass 
-	var x2 = func(x: int): return 123;pass 
-	var x3 = func bar(): pass;123 
+	var x1 = func(x): pass;pass
+	var x2 = func(x: int): return 123;pass
+	var x3 = func bar(): pass;123
 func baz():
 	var x1 = func(x):
 		var y =x+1
@@ -14,6 +14,6 @@ func baz():
 			if x>0:
 				return 5
 			return 6
-		return 7 
+		return 7
 
 	pass
