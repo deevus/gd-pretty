@@ -212,7 +212,7 @@ fn hasBlankLinesBetween(node1: Node, node2: Node) bool {
     const start_point = node2.startPoint();
 
     // If there's more than one line difference, there must be blank lines
-    return (start_point.row - end_point.row) > 1;
+    return start_point.row > end_point.row + 1;
 }
 
 pub fn writeAttribute(self: *GdWriter, node: Node) Error!void {
@@ -225,6 +225,7 @@ pub fn writeAttribute(self: *GdWriter, node: Node) Error!void {
         if (child_type == .@".") {
             try self.write(".", .{});
         } else {
+            // renderNode is a no-op for unregistered node types; fall back to verbatim text
             const bytes_before = self.bytes_written;
             try formatter.renderNode(child, self);
             if (self.bytes_written == bytes_before) {
