@@ -4,4 +4,5 @@ class X:
 
         pass
  # bbb
+
 # ccc

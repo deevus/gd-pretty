@@ -23,15 +23,19 @@ func test_basic_while_loops():
         process_frame()
 
         # While loop with property access condition
-    while player > 0:
+    while player.health > 0:
         player.take_damage(1)
+
 func is_valid() -> bool:
     return true
+
 func process_frame():
     pass
+
 class Player:
     var health: int = 100
 
     func take_damage(amount: int):
         health -= amount
+
 var player = Player.new()

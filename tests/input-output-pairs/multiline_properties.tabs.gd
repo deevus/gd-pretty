@@ -8,6 +8,7 @@ var p3 :
 var p4 :
 	get = __get,
 	set = __set
+
 var p5 :
 	get: pass
 var p6 :
@@ -18,6 +19,7 @@ var p7 :
 var p8 :
 	set(_x):
 		pass
+
 var p9 :
 	set(_x): pass
 	get: return 1
@@ -30,7 +32,9 @@ var p10 :
 	set(x):
 		var xyz = 234
 		p8 = x + 1 + xyz
+
 func __get():
 	return 1
+
 func __set(v):
 	pass

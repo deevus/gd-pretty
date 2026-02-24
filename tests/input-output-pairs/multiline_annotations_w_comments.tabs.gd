@@ -6,6 +6,7 @@ class_name Aclassname
 )
  # inline c
 # b
+
 # c
 @export_enum( # inline d
 	"Aaaaaaaaaaa", "Bbbbbbbbb", "Cccccccc", "Ddddddd", "Eeeeee", "Ffffffffff", "Gggggggggg" # inline e
@@ -15,6 +16,7 @@ class_name Aclassname
 var a
  # inline g
 # e
+
 # f
 # @onready
 # g

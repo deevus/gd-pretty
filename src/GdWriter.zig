@@ -216,22 +216,41 @@ fn hasBlankLinesBetween(node1: Node, node2: Node) bool {
 }
 
 pub fn writeAttribute(self: *GdWriter, node: Node) Error!void {
-    var i: u32 = 0;
+    // Attribute nodes are flat: [object, ".", member, ".", member, ...]
+    // Walk all children, writing "." for dot nodes and rendering others.
+    for (0..node.childCount()) |idx| {
+        const child = node.child(@intCast(idx)) orelse return Error.MissingRequiredChild;
+        const child_type = child.getTypeAsEnum(NodeType);
 
-    // identifier
-    {
-        const identifier = node.child(i) orelse return Error.MissingRequiredChild;
-        try self.writeIdentifier(identifier);
+        if (child_type == .@".") {
+            try self.write(".", .{});
+        } else {
+            const bytes_before = self.bytes_written;
+            try formatter.renderNode(child, self);
+            if (self.bytes_written == bytes_before) {
+                try self.writeTrimmed(child);
+            }
+        }
     }
-    i += 1;
 }
 
 pub fn writeSubscript(self: *GdWriter, node: Node) Error!void {
-    try @"type".writeSubscript(node, self.writer, self.context);
+    for (0..node.childCount()) |i| {
+        const child = node.child(@intCast(i)) orelse return Error.MissingRequiredChild;
+        try self.writeTrimmed(child);
+    }
 }
 
 pub fn writeType(self: *GdWriter, node: Node) Error!void {
-    try @"type".writeType(node, self.writer, self.context);
+    for (0..node.childCount()) |i| {
+        const child = node.child(@intCast(i)) orelse return Error.MissingRequiredChild;
+        const child_type = (child.getTypeAsEnum(NodeType)).?;
+
+        switch (child_type) {
+            .subscript => try self.writeSubscript(child),
+            else => try self.writeTrimmed(child),
+        }
+    }
 }
 
 pub fn writeIdentifier(self: *GdWriter, node: Node) Error!void {
@@ -240,7 +259,16 @@ pub fn writeIdentifier(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeCall(self: *GdWriter, node: Node) Error!void {
-    try self.writeTrimmed(node);
+    // child 0: function expression (identifier, attribute, etc.)
+    const func_expr = node.child(0) orelse return Error.MissingRequiredChild;
+    const bytes_before = self.bytes_written;
+    try formatter.renderNode(func_expr, self);
+    if (self.bytes_written == bytes_before) {
+        try self.writeTrimmed(func_expr);
+    }
+    // child 1: arguments
+    const args = node.child(1) orelse return Error.MissingRequiredChild;
+    try self.writeArguments(args);
 }
 
 pub fn writeClassDefinition(self: *GdWriter, node: Node) Error!void {
@@ -590,7 +618,7 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
                 .@"=" => {
                     try self.write("= ", .{});
                 },
-                .binary_operator => {
+                .binary_operator, .call, .attribute => {
                     var cursor = c.cursor();
                     try formatter.depthFirstWalk(&cursor, self);
                 },
@@ -704,7 +732,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
             i += 1;
 
             try self.write(" -> ", .{});
-            try @"type".writeType(type_node, self.writer, self.context);
+            try self.writeType(type_node);
         }
     }
 
@@ -771,20 +799,23 @@ pub fn writeSource(self: *GdWriter, node: Node) Error!void {
 
     // Source node is the root - need to traverse its children
     var i: u32 = 0;
-    var has_previous_statement = false;
+    var prev_child: ?Node = null;
 
     while (i < node.childCount()) : (i += 1) {
         const child = node.child(i).?;
         log.debug("writeSource: processing child {}: node_type={s}", .{ i, child.getTypeAsString() });
 
-        // Only add newline between statements, not before first or after empty nodes
-        if (has_previous_statement) {
+        // Add newline between statements, preserving blank lines from original source
+        if (prev_child) |prev| {
+            if (hasBlankLinesBetween(prev, child)) {
+                try self.writeNewline();
+            }
             try self.writeNewline();
         }
 
         var cursor = child.cursor();
         try formatter.depthFirstWalk(&cursor, self);
-        has_previous_statement = true;
+        prev_child = child;
     }
     log.debug("writeSource: completed, bytes_written={}", .{self.bytes_written});
 }
@@ -968,10 +999,19 @@ pub fn writeArray(self: *GdWriter, node: Node) Error!void {
     log.debug("writeArray: children={}, indent={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.bytes_written });
 
     try debug.assertNodeIsType(.array, node);
+    try self.writeDelimitedList(node, .{ .open = "[", .close = "]", .empty = "[]" });
+}
 
-    // empty array: just the open and close brackets
+const DelimitedListConfig = struct {
+    open: []const u8,
+    close: []const u8,
+    empty: []const u8,
+};
+
+fn writeDelimitedList(self: *GdWriter, node: Node, config: DelimitedListConfig) Error!void {
+    // empty list: just the open and close delimiters
     if (node.childCount() == 2) {
-        try self.write("[]", .{});
+        try self.write(config.empty, .{});
         return;
     }
 
@@ -986,12 +1026,12 @@ pub fn writeArray(self: *GdWriter, node: Node) Error!void {
         break :blk has_trailing_comma or hasComment(node);
     };
 
-    try self.write("[", .{});
+    try self.write(config.open, .{});
 
     const child_count = node.childCount();
 
     if (multiline_mode) {
-        // Check for inline comment on the opening bracket line
+        // Check for inline comment on the opening delimiter line
         if (child_count > 2) {
             const first_inner = node.child(1).?;
             if (first_inner.getTypeAsEnum(NodeType) == .comment and isInlineComment(first_inner)) {
@@ -1002,14 +1042,14 @@ pub fn writeArray(self: *GdWriter, node: Node) Error!void {
         self.context.indent_level += 1;
     }
 
-    // Process children between [ and ]
+    // Process children between open and close delimiters
     var i: usize = 1;
     while (i < child_count - 1) : (i += 1) {
         const current_node = node.child(i).?;
         const current_node_type = current_node.getTypeAsEnum(NodeType);
 
         // Skip inline comments — they are handled as look-ahead after
-        // the bracket or comma that precedes them.
+        // the delimiter or comma that precedes them.
         if (current_node_type == .comment and isInlineComment(current_node)) {
             continue;
         }
@@ -1086,7 +1126,7 @@ pub fn writeArray(self: *GdWriter, node: Node) Error!void {
         try self.writeIndentLevel(self.context.indent_level);
     }
 
-    try self.write("]", .{});
+    try self.write(config.close, .{});
 }
 
 pub fn writeString(self: *GdWriter, node: Node) Error!void {
@@ -1162,13 +1202,16 @@ pub fn writeConditionalExpression(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeAttributeCall(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement method calls on objects
-    try self.writeTrimmed(node);
+    // child 0: method name (identifier)
+    const method = node.child(0) orelse return Error.MissingRequiredChild;
+    try self.writeTrimmed(method);
+    // child 1: arguments
+    const args = node.child(1) orelse return Error.MissingRequiredChild;
+    try self.writeArguments(args);
 }
 
 pub fn writeArguments(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement function call arguments with proper spacing
-    try self.writeTrimmed(node);
+    try self.writeDelimitedList(node, .{ .open = "(", .close = ")", .empty = "()" });
 }
 
 pub fn writeParenthesizedExpression(self: *GdWriter, node: Node) Error!void {
@@ -1446,7 +1489,7 @@ const enums = @import("enums.zig");
 const NodeType = enums.GdNodeType;
 
 const formatter = @import("formatter.zig");
-const @"type" = @import("type.zig");
+
 const Context = @import("Context.zig");
 const WhitespaceConfig = @import("WhitespaceConfig.zig");
 

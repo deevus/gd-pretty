@@ -38,19 +38,27 @@ func test_while_loops_with_comments():
     while has_work():
         process_work()
 # End of work processing
+
 func handle_input():
     pass
+
 func update_game():
     pass
+
 func render():
     pass
+
 func should_exit() -> bool:
     return false
+
 func is_active() -> bool:
     return true
+
 func do_work():
     pass
+
 func has_work() -> bool:
     return false
+
 func process_work():
     pass

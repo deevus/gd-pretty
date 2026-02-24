@@ -17,21 +17,25 @@ class Example:
         pass
 
     # Comment at end of class body
+
 # Comments with special content
 func unicode_test():
     # Unicode: 你好, symbols: @#$%^&*, code: var x = "hello"
     var z = 3
+
 # Multiple consecutive comments
 func multiple_comments():
     # First comment
     # Second comment
     # Third comment
     var result = 42
+
 # Empty comments
 func empty_comments():
     #
     var data = []
     #
+
 # Mixed inline and standalone comments
 func mixed_comments():
     var start = 0 # inline comment

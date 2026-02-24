@@ -19,6 +19,7 @@ func foo():
 	# var x16 = func(): for x in [1]: pass
 	# var x17 = func(): for x : int in [1]: pass
 	pass
+
 func bar():
 	var x1 = func():
 		pass

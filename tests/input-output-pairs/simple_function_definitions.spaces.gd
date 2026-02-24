@@ -1,5 +1,6 @@
 class Y:
     
+
 class X:
     extends Y
     func foo(a):
@@ -25,6 +26,7 @@ class X:
 
     func ban(a, b, c, ):
         pass
+
 class Z:
     extends Y
     

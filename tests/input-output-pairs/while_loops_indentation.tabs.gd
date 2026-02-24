@@ -13,6 +13,7 @@ class IndentationTest:
 			while inner_val < 3:
 				print("Inner class loop:", inner_val)
 				inner_val += 1
+
 func test_deep_indentation():
 	if true:
 		if true:
@@ -25,7 +26,7 @@ func test_deep_indentation():
 
 	# While loop with various indented constructs
 	var data = [1, 2, 3]
-	while data > 0:
+	while data.size() > 0:
 		var item = data.pop_back()
 		if item > 1:
 			match item:
@@ -35,6 +36,7 @@ func test_deep_indentation():
 					print("Found three")
 				_:
 					print("Something else")
+
 func test_lambda_with_while():
 	# While loop inside lambda
 	var processor = func():
@@ -51,6 +53,7 @@ func test_lambda_with_while():
 		var temp_func = func(x): return x * 2
 		print("Result:", temp_func.call(iterations))
 		iterations += 1
+
 func test_mixed_control_structures():
 	# Complex mixing of while with other control structures
 	for i in range(3):

@@ -3,6 +3,7 @@ var y
 func foo():
     pass
 var q
+
 var w
 class X:
     pass
@@ -22,13 +23,18 @@ class X:
         pass
 func bar():
     pass
+
 func baz():
     pass
+
 # zzz
+
 func bat():
     pass
+
 var a
 var b
+
 # qqq
 class C:
     pass
