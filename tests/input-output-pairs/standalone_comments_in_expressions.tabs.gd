@@ -1,4 +1,10 @@
-signal s(a, b)
+signal s(
+	# qq1
+	a,
+	# ww1
+	b
+	# ee1
+)
 # TODO: change to annotation
 # export(
 # 	# qq2
@@ -35,7 +41,13 @@ func foo():
 		# ww3
 	}
 
-func bar(a, b):
+func bar(
+	# qq4
+	a,
+	# ww4
+	b
+	# ee4
+):
 	# rr4
 	pass
 

@@ -525,38 +525,8 @@ pub fn writeSignalStatement(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeParameters(self: *GdWriter, node: Node) Error!void {
-    log.debug("writeParameters: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
     assert(node.getTypeAsEnum(NodeType) == .parameters);
-
-    try self.write("(", .{});
-    for (0..node.childCount()) |j| {
-        const param = node.child(@intCast(j)) orelse return Error.MissingRequiredChild;
-        const param_type = param.getTypeAsEnum(NodeType) orelse {
-            log.debug("Unknown node type: '{s}', treating as comment", .{param.getTypeAsString()});
-            if (param.getTypeAsEnum(NodeType) == .comment) {
-                try self.handleComment(param);
-            } else {
-                // For non-comment unknown types, use trimmed write as fallback
-                const param_text = trimWhitespace(param.text());
-                try self.write(param_text, .{});
-            }
-            continue;
-        };
-
-        const param_text = trimWhitespace(param.text());
-        log.debug("writeParameters: param[{}] type={s}, text='{s}'", .{ j, @tagName(param_type), param_text });
-
-        switch (param_type) {
-            .typed_parameter => {
-                try self.write(param_text, .{});
-            },
-            .@"," => try self.write(", ", .{}),
-            .identifier => try self.write(param_text, .{}),
-            .@"(", .@")" => continue,
-            else => log.warn("unknown param type: {} {s}", .{ param_type, param.text() }),
-        }
-    }
-    try self.write(")", .{});
+    try self.writeDelimitedList(node, .{ .open = "(", .close = ")" });
 }
 
 pub fn writeExtendsStatement(self: *GdWriter, node: Node) Error!void {
@@ -688,9 +658,9 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     }
     i += 1;
 
-    // optional name
+    // optional name (regular functions have `name`, constructors have `_init`)
     {
-        if (node.child(i).?.getTypeAsEnum(NodeType) == .name) {
+        if (node.child(i).?.getTypeAsEnum(NodeType) != .parameters) {
             const text = trimWhitespace(node.child(i).?.text());
             try self.write(" ", .{});
             try self.write(text, .{});
@@ -702,27 +672,7 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     {
         const params_node = node.child(i) orelse return Error.MissingRequiredChild;
         assert(params_node.getTypeAsEnum(NodeType) == .parameters);
-
-        try self.write("(", .{});
-        for (0..params_node.childCount()) |j| {
-            const param = params_node.child(@intCast(j)) orelse return Error.MissingRequiredChild;
-            const param_type = param.getTypeAsEnum(NodeType) orelse {
-                log.warn("unknown param type: {s} {s}", .{ param.getTypeAsString(), param.text()[0..@min(20, param.text().len)] });
-                continue;
-            };
-
-            const param_text = trimWhitespace(param.text());
-            switch (param_type) {
-                .typed_parameter => {
-                    try self.write(param_text, .{});
-                },
-                .@"," => try self.write(", ", .{}),
-                .identifier => try self.write(param_text, .{}),
-                .@"(", .@")" => continue,
-                else => log.warn("unknown param type: {} {s}", .{ param_type, param.text() }),
-            }
-        }
-        try self.write(")", .{});
+        try self.writeParameters(params_node);
     }
     i += 1;
 
@@ -768,6 +718,10 @@ pub fn writeFunctionDefinition(self: *GdWriter, node: Node) Error!void {
     self.context.indent_level += 1;
     try self.writeBody(node.child(i).?);
     self.context.indent_level -= 1;
+}
+
+pub fn writeConstructorDefinition(self: *GdWriter, node: Node) Error!void {
+    try self.writeFunctionDefinition(node);
 }
 
 pub fn writeReturnStatement(self: *GdWriter, node: Node) Error!void {
@@ -1244,8 +1198,67 @@ pub fn writeInferredType(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeTypedParameter(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement function parameters with types
-    try self.writeTrimmed(node);
+    for (0..node.childCount()) |idx| {
+        const child = node.child(@intCast(idx)) orelse return Error.MissingRequiredChild;
+        const child_type = child.getTypeAsEnum(NodeType) orelse {
+            try formatter.renderNode(child, self);
+            continue;
+        };
+
+        switch (child_type) {
+            .identifier => try self.writeTrimmed(child),
+            .@":" => try self.write(": ", .{}),
+            .type => try self.writeTrimmed(child),
+            else => try formatter.renderNode(child, self),
+        }
+    }
+}
+
+pub fn writeDefaultParameter(self: *GdWriter, node: Node) Error!void {
+    var idx: u32 = 0;
+    while (idx < node.childCount()) : (idx += 1) {
+        const child = node.child(idx) orelse return Error.MissingRequiredChild;
+        const child_type = child.getTypeAsEnum(NodeType) orelse {
+            // tree-sitter parses `b:=1` as: identifier, ERROR(":"), =, value
+            // Detect ERROR(":") followed by "=" and emit " := "
+            if (std.mem.eql(u8, child.text(), ":")) {
+                if (node.child(idx + 1)) |next| {
+                    if (next.getTypeAsEnum(NodeType) == .@"=") {
+                        try self.write(" := ", .{});
+                        idx += 1; // skip the "=" child
+                        continue;
+                    }
+                }
+            }
+            try formatter.renderNode(child, self);
+            continue;
+        };
+
+        switch (child_type) {
+            .identifier => try self.writeTrimmed(child),
+            .@"=" => try self.write(" = ", .{}),
+            .@":=" => try self.write(" := ", .{}),
+            else => try formatter.renderNode(child, self),
+        }
+    }
+}
+
+pub fn writeTypedDefaultParameter(self: *GdWriter, node: Node) Error!void {
+    for (0..node.childCount()) |idx| {
+        const child = node.child(@intCast(idx)) orelse return Error.MissingRequiredChild;
+        const child_type = child.getTypeAsEnum(NodeType) orelse {
+            try formatter.renderNode(child, self);
+            continue;
+        };
+
+        switch (child_type) {
+            .identifier => try self.writeTrimmed(child),
+            .@":" => try self.write(": ", .{}),
+            .type => try self.writeTrimmed(child),
+            .@"=" => try self.write(" = ", .{}),
+            else => try formatter.renderNode(child, self),
+        }
+    }
 }
 
 pub fn writeAnnotation(self: *GdWriter, node: Node) Error!void {

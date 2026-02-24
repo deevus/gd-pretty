@@ -205,6 +205,7 @@ test "input output pairs" {
                     });
 
                     try formatter.depthFirstWalk(&cursor, &gd_writer);
+                    try writer.writeByte('\n');
                     try writer.flush();
                 }
 
