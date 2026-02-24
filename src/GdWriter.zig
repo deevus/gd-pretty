@@ -244,7 +244,10 @@ pub fn writeSubscript(self: *GdWriter, node: Node) Error!void {
 pub fn writeType(self: *GdWriter, node: Node) Error!void {
     for (0..node.childCount()) |i| {
         const child = node.child(@intCast(i)) orelse return Error.MissingRequiredChild;
-        const child_type = (child.getTypeAsEnum(NodeType)).?;
+        const child_type = child.getTypeAsEnum(NodeType) orelse {
+            try self.writeTrimmed(child);
+            continue;
+        };
 
         switch (child_type) {
             .subscript => try self.writeSubscript(child),
@@ -800,21 +803,27 @@ pub fn writeSource(self: *GdWriter, node: Node) Error!void {
     // Source node is the root - need to traverse its children
     var i: u32 = 0;
     var prev_child: ?Node = null;
+    var prev_wrote_output = false;
 
     while (i < node.childCount()) : (i += 1) {
         const child = node.child(i).?;
         log.debug("writeSource: processing child {}: node_type={s}", .{ i, child.getTypeAsString() });
 
         // Add newline between statements, preserving blank lines from original source
+        // Only emit separator if the previous child actually wrote output
         if (prev_child) |prev| {
-            if (hasBlankLinesBetween(prev, child)) {
+            if (prev_wrote_output) {
+                if (hasBlankLinesBetween(prev, child)) {
+                    try self.writeNewline();
+                }
                 try self.writeNewline();
             }
-            try self.writeNewline();
         }
 
+        const bytes_before = self.bytes_written;
         var cursor = child.cursor();
         try formatter.depthFirstWalk(&cursor, self);
+        prev_wrote_output = self.bytes_written > bytes_before;
         prev_child = child;
     }
     log.debug("writeSource: completed, bytes_written={}", .{self.bytes_written});
@@ -999,19 +1008,19 @@ pub fn writeArray(self: *GdWriter, node: Node) Error!void {
     log.debug("writeArray: children={}, indent={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.bytes_written });
 
     try debug.assertNodeIsType(.array, node);
-    try self.writeDelimitedList(node, .{ .open = "[", .close = "]", .empty = "[]" });
+    try self.writeDelimitedList(node, .{ .open = "[", .close = "]" });
 }
 
 const DelimitedListConfig = struct {
     open: []const u8,
     close: []const u8,
-    empty: []const u8,
 };
 
 fn writeDelimitedList(self: *GdWriter, node: Node, config: DelimitedListConfig) Error!void {
     // empty list: just the open and close delimiters
     if (node.childCount() == 2) {
-        try self.write(config.empty, .{});
+        try self.write(config.open, .{});
+        try self.write(config.close, .{});
         return;
     }
 
@@ -1211,7 +1220,7 @@ pub fn writeAttributeCall(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeArguments(self: *GdWriter, node: Node) Error!void {
-    try self.writeDelimitedList(node, .{ .open = "(", .close = ")", .empty = "()" });
+    try self.writeDelimitedList(node, .{ .open = "(", .close = ")" });
 }
 
 pub fn writeParenthesizedExpression(self: *GdWriter, node: Node) Error!void {
