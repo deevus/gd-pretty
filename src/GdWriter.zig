@@ -796,7 +796,7 @@ pub fn writeSource(self: *GdWriter, node: Node) Error!void {
         // Only emit separator if the previous child actually wrote output
         if (prev_child) |prev| {
             if (prev_wrote_output) {
-                if (prev.getTypeAsEnum(NodeType) == .class_name_statement and child.getTypeAsEnum(NodeType) == .extends_statement) {
+                if (prev.getTypeAsEnum(NodeType) == .class_name_statement and child.getTypeAsEnum(NodeType) == .extends_statement and !hasBlankLinesBetween(prev, child)) {
                     // class_name Foo extends Node — keep on same line
                     try self.write(" ", .{});
                 } else {
