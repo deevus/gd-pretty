@@ -2,7 +2,13 @@
 
 This file tracks completed improvements and changes to the gd-pretty GDScript formatter.
 
-## [Unreleased] - February 24, 2026
+## [Unreleased] - February 25, 2026
+
+### Fixed
+- **class_name extends on same line** - `class_name Foo extends Node` is no longer split into two lines
+  - Detects `class_name_statement` followed by `extends_statement` in `writeSource` and emits a space instead of a newline
+  - Preserves intentional blank lines: if a blank line separates the two declarations, they remain on separate lines
+  - Files: `src/GdWriter.zig`
 
 ### Added
 - **Enum Formatting** - Implemented `writeEnumDefinition` and `writeEnumerator` for proper enum formatting
