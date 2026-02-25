@@ -1000,8 +1000,10 @@ const DelimitedListConfig = struct {
 };
 
 fn writeDelimitedList(self: *GdWriter, node: Node, config: DelimitedListConfig) Error!void {
+    const child_count = node.childCount();
+
     // empty list: just the open and close delimiters
-    if (node.childCount() == 2) {
+    if (child_count == 2) {
         try self.write(config.open, .{});
         try self.write(config.close, .{});
         return;
@@ -1010,19 +1012,15 @@ fn writeDelimitedList(self: *GdWriter, node: Node, config: DelimitedListConfig) 
     // trailing comma, comments, or already multiline in source?
     const multiline_mode = blk: {
         const has_trailing_comma =
-            if (node.child(node.childCount() - 1)) |cn|
+            if (node.child(child_count - 1)) |cn|
                 if (cn.prevSibling()) |prev| prev.getTypeAsEnum(NodeType) == .@"," else false
             else
                 false;
 
-        const source_is_multiline = node.startPoint().row != node.endPoint().row;
-
-        break :blk has_trailing_comma or hasComment(node) or source_is_multiline;
+        break :blk has_trailing_comma or hasComment(node);
     };
 
     try self.write(config.open, .{});
-
-    const child_count = node.childCount();
 
     const source = node.tree.input;
 
@@ -1175,6 +1173,67 @@ pub fn writePair(self: *GdWriter, node: Node) Error!void {
             try self.write(" = ", .{});
         } else {
             // Key or value expression
+            const bytes_before = self.bytes_written;
+            try formatter.renderNode(child, self);
+            if (self.bytes_written == bytes_before) {
+                try self.writeTrimmed(child);
+            }
+        }
+    }
+}
+
+pub fn writeEnumDefinition(self: *GdWriter, node: Node) Error!void {
+    log.debug("writeEnumDefinition: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
+    try debug.assertNodeIsType(.enum_definition, node);
+
+    // Structure: enum [Name] enumerator_list
+    // enumerator_list contains: { enumerator, enumerator, ... }
+    try self.write("enum", .{});
+
+    // Children: "enum" keyword, optional name, enumerator_list
+    var body: ?Node = null;
+    for (0..node.childCount()) |i| {
+        const child = node.child(@intCast(i)).?;
+        const ct = child.getTypeAsEnum(NodeType);
+        if (ct == .name) {
+            try self.write(" ", .{});
+            try self.writeTrimmed(child);
+        } else if (ct == .enumerator_list) {
+            body = child;
+        } else if (ct != null) {
+            // Unexpected registered node type — use renderNode/writeTrimmed fallback
+            const bytes_before = self.bytes_written;
+            try formatter.renderNode(child, self);
+            if (self.bytes_written == bytes_before) {
+                try self.writeTrimmed(child);
+            }
+        }
+        // else: ct == null means it's a keyword token like "enum" — skip, we wrote it above
+    }
+
+    const list_node = body orelse return Error.MalformedAST;
+    try self.write(" ", .{});
+    try self.writeDelimitedList(list_node, .{ .open = "{", .close = "}" });
+}
+
+pub fn writeEnumeratorList(_: *GdWriter, _: Node) Error!void {
+    // enumerator_list is always handled via writeDelimitedList from writeEnumDefinition.
+    // If depthFirstWalk dispatches here, something is wrong.
+    return Error.MalformedAST;
+}
+
+pub fn writeEnumerator(self: *GdWriter, node: Node) Error!void {
+    log.debug("writeEnumerator: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
+    try debug.assertNodeIsType(.enumerator, node);
+
+    for (0..node.childCount()) |i| {
+        const child = node.child(@intCast(i)).?;
+        const ct = child.getTypeAsEnum(NodeType);
+        if (ct == .name) {
+            try self.writeTrimmed(child);
+        } else if (ct == .@"=") {
+            try self.write(" = ", .{});
+        } else {
             const bytes_before = self.bytes_written;
             try formatter.renderNode(child, self);
             if (self.bytes_written == bytes_before) {

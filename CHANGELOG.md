@@ -5,6 +5,14 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
 ## [Unreleased] - February 24, 2026
 
 ### Added
+- **Enum Formatting** - Implemented `writeEnumDefinition` and `writeEnumerator` for proper enum formatting
+  - Anonymous and named enums: `enum {A, B}`, `enum Named {A, B}`
+  - Enumerator values with spacing: `A = 1`
+  - Empty enums: `enum {}`
+  - Trailing comma triggers multiline expansion
+  - Inline comments preserved on `{`, enumerators, and `}`
+  - Reuses `writeDelimitedList` via the `enumerator_list` sub-node
+  - Files: `src/GdWriter.zig`, `src/enums.zig` (added `enum_definition`, `enumerator`)
 - **Dictionary Formatting** - Implemented `writeDictionary` and `writePair` for proper dictionary literal formatting
   - Colon pairs formatted as `key: value` with space after colon
   - Equals pairs formatted as `key = value` with spaces around equals

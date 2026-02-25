@@ -76,6 +76,9 @@ pub const GdNodeType = enum {
     class_definition,
     class_name,
     class_name_statement,
+    enum_definition,
+    enumerator,
+    enumerator_list, // writeEnumDefinition intercepts the parent and handles this child via writeDelimitedList directly
     comment,
     parenthesized_expression,
     @"@",

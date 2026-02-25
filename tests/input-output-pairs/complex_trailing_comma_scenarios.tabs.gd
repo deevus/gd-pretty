@@ -1,3 +1,5 @@
+enum RoadTiles {DEAD_END, STRAIGHT, TURN, T_INTERSECTION, FULL_INTERSECTION}
+
 const TRANSITION_MAP = {
 	RoadTiles.DEAD_END: [
 		[1.0, RoadTiles.STRAIGHT],

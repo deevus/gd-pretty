@@ -5,7 +5,4 @@ class X:
 			[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 			[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 		}
-		var z = {
-			'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-			'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxy': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-		}
+		var z = {'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxy': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}
