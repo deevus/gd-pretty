@@ -841,8 +841,82 @@ pub fn writeSource(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeConstStatement(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement const declarations (const VAR = value)
-    try self.writeTrimmed(node);
+    log.debug("writeConstStatement: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
+    assert(node.getTypeAsEnum(NodeType) == .const_statement);
+
+    if (comptime std.log.default_level == .debug) {
+        for (0..node.childCount()) |idx| {
+            if (node.child(@intCast(idx))) |child| {
+                const trimmed_text = std.mem.trim(u8, child.text(), " \t\n\r");
+                log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(20, trimmed_text.len)] });
+            }
+        }
+    }
+
+    var i: u32 = 0;
+
+    // const keyword
+    {
+        const const_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(const_node.getTypeAsEnum(NodeType) == .@"const");
+        try self.write("const ", .{});
+        i += 1;
+    }
+
+    // name
+    {
+        const name_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(name_node.getTypeAsEnum(NodeType) == .name);
+        try self.writeTrimmed(name_node);
+        i += 1;
+    }
+
+    // Check what follows the name to determine spacing
+    if (node.child(i)) |next| {
+        const next_type = next.getTypeAsEnum(NodeType);
+        if (next_type == .@":") {
+            // Explicit type: "const NAME: TYPE = VALUE"
+            try self.write(": ", .{});
+            i += 1;
+        } else if (next_type == .inferred_type) {
+            // Inferred type: "const NAME := VALUE"
+            try self.write(" := ", .{});
+            i += 1;
+        } else {
+            // No type annotation, add space before = or value
+            try self.write(" ", .{});
+        }
+    }
+
+    // Remaining children: optional type, =, value
+    const child_count = node.childCount();
+    while (i < child_count) {
+        const child = node.child(i) orelse break;
+
+        const child_type = child.getTypeAsEnum(NodeType) orelse {
+            log.debug("writeConstStatement: unknown node type for child {}: '{s}', falling back to trimmed write", .{ i, child.getTypeAsString() });
+            try self.writeTrimmed(child);
+            i += 1;
+            continue;
+        };
+
+        switch (child_type) {
+            .@"=" => {
+                try self.write("= ", .{});
+            },
+            .type => {
+                var cursor = child.cursor();
+                try formatter.depthFirstWalk(&cursor, self);
+                try self.write(" ", .{});
+            },
+            else => {
+                var cursor = child.cursor();
+                try formatter.depthFirstWalk(&cursor, self);
+            },
+        }
+
+        i += 1;
+    }
 }
 
 pub fn writeIfStatement(self: *GdWriter, node: Node) Error!void {

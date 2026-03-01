@@ -17,6 +17,10 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
   - Handles basic `for i in expr:`, typed `for i: int in expr:`, inline comments, and nested loops
   - Follows the same defensive body-finding pattern as `writeWhileStatement` and `writeIfStatement`
   - Files: `src/GdWriter.zig`
+- **Const Statement Formatting** - Implemented proper formatting for `const` declarations with `writeConstStatement`
+  - Handles basic `const NAME = value`, inferred type `const NAME := value`, and explicit type `const NAME: TYPE = value`
+  - Normalizes spacing around `:`, `:=`, and `=` operators
+  - Files: `src/GdWriter.zig`
 
 ### Fixed
 - **Comment Indentation for Tree-sitter Misassignment** - Comments at lower indent levels than the current context now preserve their original indentation
