@@ -47,8 +47,7 @@ var p10 :						# inline i
 		# q
 		var xyz = 234			# inline n
 		# r
-		p8 = x + 1 + xyz
- # inline o
+		p8 = x + 1 + xyz # inline o
 # s
 # t
 # u

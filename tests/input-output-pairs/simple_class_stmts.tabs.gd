@@ -5,8 +5,7 @@ var x
 
 var y
 
-var z
- # ccc
+var z # ccc
 
 # ddd
 var q
