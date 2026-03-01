@@ -482,6 +482,31 @@ pub fn writePassStatement(self: *GdWriter, node: Node) Error!void {
     try self.write("pass", .{});
 }
 
+pub fn writeBreakpointStatement(self: *GdWriter, node: Node) Error!void {
+    assert(node.getTypeAsEnum(NodeType) == .breakpoint_statement);
+    try self.write("breakpoint", .{});
+}
+
+pub fn writeBreakStatement(self: *GdWriter, node: Node) Error!void {
+    assert(node.getTypeAsEnum(NodeType) == .break_statement);
+    try self.write("break", .{});
+}
+
+pub fn writeBreak(self: *GdWriter, node: Node) Error!void {
+    _ = node;
+    try self.write("break", .{});
+}
+
+pub fn writeContinueStatement(self: *GdWriter, node: Node) Error!void {
+    assert(node.getTypeAsEnum(NodeType) == .continue_statement);
+    try self.write("continue", .{});
+}
+
+pub fn writeContinue(self: *GdWriter, node: Node) Error!void {
+    _ = node;
+    try self.write("continue", .{});
+}
+
 pub fn writeSignalStatement(self: *GdWriter, node: Node) Error!void {
     assert(node.getTypeAsEnum(NodeType) == .signal_statement);
 
@@ -831,8 +856,97 @@ pub fn writeConstStatement(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeIfStatement(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement if statements with proper indentation
-    try self.writeTrimmed(node);
+    log.debug("writeIfStatement: children={}, indent={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.bytes_written });
+    assert(node.getTypeAsEnum(NodeType) == .if_statement);
+
+    if (comptime std.log.default_level == .debug) {
+        for (0..node.childCount()) |idx| {
+            if (node.child(@intCast(idx))) |child| {
+                const trimmed_text = std.mem.trim(u8, child.text(), " \t\n\r");
+                log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(40, trimmed_text.len)] });
+            }
+        }
+    }
+
+    var i: u32 = 0;
+
+    // if keyword
+    {
+        const if_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(if_node.getTypeAsEnum(NodeType) == .@"if");
+        try self.write("if ", .{});
+        i += 1;
+    }
+
+    // condition expression
+    {
+        const condition_node = node.child(i) orelse return Error.MissingRequiredChild;
+        log.debug("writeIfStatement: processing condition of type {s}", .{condition_node.getTypeAsString()});
+        var cursor = condition_node.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+        i += 1;
+    }
+
+    // colon
+    {
+        const colon_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(colon_node.getTypeAsEnum(NodeType) == .@":");
+        try self.write(":", .{});
+        i += 1;
+    }
+
+    // Check for inline comment after colon
+    if (node.child(i)) |next_node| {
+        if (next_node.getTypeAsEnum(NodeType) == .comment and isInlineComment(next_node)) {
+            try self.handleComment(next_node);
+            i += 1;
+        }
+    }
+
+    // Write newline after colon (and inline comment if present)
+    try self.writeNewline();
+
+    // body
+    {
+        const body_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(body_node.getTypeAsEnum(NodeType) == .body);
+        const old_indent = self.context.indent_level;
+        self.context.indent_level += 1;
+        try self.writeBody(body_node);
+        self.context.indent_level = old_indent;
+        i += 1;
+    }
+
+    // Process remaining children (elif_clause, else_clause, comments)
+    while (i < node.childCount()) {
+        const child = node.child(i) orelse break;
+        const child_type = child.getTypeAsEnum(NodeType) orelse {
+            log.err("Expected elif_clause, else_clause, or comment in if_statement, got {s}", .{child.getTypeAsString()});
+            return Error.UnexpectedNodeType;
+        };
+
+        switch (child_type) {
+            .elif_clause => {
+                try self.writeNewline();
+                try self.writeIndentLevel(self.context.indent_level);
+                try self.writeElifClause(child);
+            },
+            .else_clause => {
+                try self.writeNewline();
+                try self.writeIndentLevel(self.context.indent_level);
+                try self.writeElseClause(child);
+            },
+            .comment => {
+                try self.handleComment(child);
+            },
+            else => {
+                log.err("Expected elif_clause, else_clause, or comment in if_statement, got {s}", .{child.getTypeAsString()});
+                return Error.UnexpectedNodeType;
+            },
+        }
+
+        i += 1;
+    }
 }
 
 pub fn writeForStatement(self: *GdWriter, node: Node) Error!void {
@@ -1008,13 +1122,158 @@ pub fn writePatternSection(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeElseClause(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement else clauses with proper indentation
-    try self.writeTrimmed(node);
+    log.debug("writeElseClause: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
+    assert(node.getTypeAsEnum(NodeType) == .else_clause);
+
+    var i: u32 = 0;
+
+    // else keyword
+    {
+        const else_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(else_node.getTypeAsEnum(NodeType) == .@"else");
+        try self.write("else", .{});
+        i += 1;
+    }
+
+    // colon
+    {
+        const colon_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(colon_node.getTypeAsEnum(NodeType) == .@":");
+        try self.write(":", .{});
+        i += 1;
+    }
+
+    // Check for inline comment after colon
+    if (node.child(i)) |next_node| {
+        if (next_node.getTypeAsEnum(NodeType) == .comment and isInlineComment(next_node)) {
+            try self.handleComment(next_node);
+            i += 1;
+        }
+    }
+
+    // Write newline after colon
+    try self.writeNewline();
+
+    // body (with comment handling)
+    {
+        var current_index = i;
+        var found_body = false;
+
+        while (current_index < node.childCount()) {
+            const child = node.child(current_index) orelse break;
+
+            const child_type = child.getTypeAsEnum(NodeType) orelse {
+                log.err("Expected body or comment in else clause, got {s}", .{child.getTypeAsString()});
+                return Error.UnexpectedNodeType;
+            };
+
+            switch (child_type) {
+                .comment => {
+                    try self.handleComment(child);
+                    current_index += 1;
+                    continue;
+                },
+                .body => {
+                    const old_indent = self.context.indent_level;
+                    self.context.indent_level += 1;
+                    try self.writeBody(child);
+                    self.context.indent_level = old_indent;
+                    found_body = true;
+                    break;
+                },
+                else => {
+                    log.err("Expected body or comment in else clause, got {s}", .{child.getTypeAsString()});
+                    return Error.UnexpectedNodeType;
+                },
+            }
+        }
+
+        if (!found_body) {
+            return Error.MissingRequiredChild;
+        }
+    }
 }
 
 pub fn writeElifClause(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement elif clauses with proper indentation
-    try self.writeTrimmed(node);
+    log.debug("writeElifClause: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
+    assert(node.getTypeAsEnum(NodeType) == .elif_clause);
+
+    var i: u32 = 0;
+
+    // elif keyword
+    {
+        const elif_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(elif_node.getTypeAsEnum(NodeType) == .elif);
+        try self.write("elif ", .{});
+        i += 1;
+    }
+
+    // condition expression
+    {
+        const condition_node = node.child(i) orelse return Error.MissingRequiredChild;
+        log.debug("writeElifClause: processing condition of type {s}", .{condition_node.getTypeAsString()});
+        var cursor = condition_node.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+        i += 1;
+    }
+
+    // colon
+    {
+        const colon_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(colon_node.getTypeAsEnum(NodeType) == .@":");
+        try self.write(":", .{});
+        i += 1;
+    }
+
+    // Check for inline comment after colon
+    if (node.child(i)) |next_node| {
+        if (next_node.getTypeAsEnum(NodeType) == .comment and isInlineComment(next_node)) {
+            try self.handleComment(next_node);
+            i += 1;
+        }
+    }
+
+    // Write newline after colon
+    try self.writeNewline();
+
+    // body (with comment handling)
+    {
+        var current_index = i;
+        var found_body = false;
+
+        while (current_index < node.childCount()) {
+            const child = node.child(current_index) orelse break;
+
+            const child_type = child.getTypeAsEnum(NodeType) orelse {
+                log.err("Expected body or comment in elif clause, got {s}", .{child.getTypeAsString()});
+                return Error.UnexpectedNodeType;
+            };
+
+            switch (child_type) {
+                .comment => {
+                    try self.handleComment(child);
+                    current_index += 1;
+                    continue;
+                },
+                .body => {
+                    const old_indent = self.context.indent_level;
+                    self.context.indent_level += 1;
+                    try self.writeBody(child);
+                    self.context.indent_level = old_indent;
+                    found_body = true;
+                    break;
+                },
+                else => {
+                    log.err("Expected body or comment in elif clause, got {s}", .{child.getTypeAsString()});
+                    return Error.UnexpectedNodeType;
+                },
+            }
+        }
+
+        if (!found_body) {
+            return Error.MissingRequiredChild;
+        }
+    }
 }
 
 pub fn writeLambda(self: *GdWriter, node: Node) Error!void {
@@ -1559,8 +1818,18 @@ pub fn handleComment(self: *GdWriter, comment_node: Node) Error!void {
         try self.writeTrimmed(comment_node);
         // Don't write newline for inline comments - let the caller handle it
     } else {
-        // Standalone comment - preserve indentation
-        try self.writeIndentLevel(self.context.indent_level);
+        // Standalone comment - use original column position when it indicates the comment
+        // is at a lower indent level than the current context. Tree-sitter can misassign
+        // comments to deeper bodies than their actual indentation suggests (common in
+        // indentation-based languages where comments between dedented blocks get absorbed
+        // into the preceding body).
+        // Column 0 comments are always normalized to the context indent level.
+        const original_column: u32 = @intCast(comment_node.startPoint().column);
+        const effective_indent = if (original_column > 0 and original_column < self.context.indent_level)
+            original_column
+        else
+            self.context.indent_level;
+        try self.writeIndentLevel(effective_indent);
         try self.writeTrimmed(comment_node);
         // Note: newline after comment is handled by the container (writeBody)
     }

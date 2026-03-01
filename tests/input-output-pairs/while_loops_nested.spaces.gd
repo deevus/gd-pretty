@@ -8,7 +8,7 @@ func test_nested_while_loops():
             j += 1
         i += 1
 
-        # Deeply nested while loops
+    # Deeply nested while loops
     var x = 0
     while x < 2:
         var y = 0
@@ -20,7 +20,7 @@ func test_nested_while_loops():
             y += 1
         x += 1
 
-        # Mixed control flow with while loops
+    # Mixed control flow with while loops
     var count = 0
     while count < 5:
         if count % 2 == 0:
@@ -33,7 +33,7 @@ func test_nested_while_loops():
                 print("Odd iteration:", k)
         count += 1
 
-        # While loop inside function inside while loop
+    # While loop inside function inside while loop
     var outer = 0
     while outer < 3:
         var process_inner = func():

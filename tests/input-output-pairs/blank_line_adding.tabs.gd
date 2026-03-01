@@ -13,7 +13,7 @@ class X:
 		pass
 	class Y:
 		pass
-		# xxx
+	# xxx
 	func baz():
 		pass
 

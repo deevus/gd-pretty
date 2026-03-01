@@ -3,7 +3,7 @@ func foo():
     var x
     # bbb
     if true:
-# ccc
+        # ccc
         pass
         # ddd
 # eee
