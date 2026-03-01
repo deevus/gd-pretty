@@ -2089,17 +2089,9 @@ pub fn writeArguments(self: *GdWriter, node: Node) Error!void {
 
 pub fn writeParenthesizedExpression(self: *GdWriter, node: Node) Error!void {
     // Structure: "(" expression ")"
+    const expr = node.child(1) orelse return Error.MissingRequiredChild;
     try self.write("(", .{});
-    for (0..node.childCount()) |idx| {
-        const child = node.child(@intCast(idx)) orelse return Error.MissingRequiredChild;
-        const child_type = child.getTypeAsEnum(NodeType);
-        if (child_type) |ct| {
-            // Skip the punctuation tokens — we write them ourselves
-            if (ct == .@"(" or ct == .@")") continue;
-        }
-        var cursor = child.cursor();
-        try formatter.depthFirstWalk(&cursor, self);
-    }
+    try formatter.renderNode(expr, self);
     try self.write(")", .{});
 }
 
