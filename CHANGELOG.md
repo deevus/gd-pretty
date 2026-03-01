@@ -16,6 +16,11 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
   - Files: `src/GdWriter.zig`
 
 ### Added
+- **Parenthesized Expression Formatting** - Implemented `writeParenthesizedExpression` to properly format inner expressions
+  - Previously used `writeTrimmed`, so `(1+1)` stayed as `(1+1)` instead of `(1 + 1)`
+  - Now writes `(`, formats child expressions via `depthFirstWalk`, then writes `)`
+  - Affects binary operators, nested parentheses, and all expression types inside parentheses
+  - Files: `src/GdWriter.zig`
 - **If/Elif/Else Statement Formatting** - Implemented proper formatting for if/elif/else statements
   - Replaces `writeTrimmed` stubs with structured formatting that handles conditions, bodies, inline comments, and indentation
   - Follows the same pattern as the existing `writeWhileStatement` implementation

@@ -2088,8 +2088,11 @@ pub fn writeArguments(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeParenthesizedExpression(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement expressions in parentheses
-    try self.writeTrimmed(node);
+    // Structure: "(" expression ")"
+    const expr = node.child(1) orelse return Error.MissingRequiredChild;
+    try self.write("(", .{});
+    try formatter.renderNode(expr, self);
+    try self.write(")", .{});
 }
 
 // Type System
