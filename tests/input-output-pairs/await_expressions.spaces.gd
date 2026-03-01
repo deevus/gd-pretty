@@ -13,6 +13,9 @@ func foo():
     var x = int(await coroutine([]) is int) + 1
     var y = [
         1,
-        await coroutine([1,2,]),
+        await coroutine([
+            1,
+            2,
+        ]),
     ]
     await await coroutine2()

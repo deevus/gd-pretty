@@ -1509,8 +1509,18 @@ pub fn writeUnaryOperator(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeAwaitExpression(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement await expressions
-    try self.writeTrimmed(node);
+    log.debug("writeAwaitExpression: children={}", .{node.childCount()});
+    assert(node.getTypeAsEnum(NodeType) == .await_expression);
+
+    // child 0: await keyword
+    const await_node = node.child(0) orelse return Error.MissingRequiredChild;
+    assert(std.mem.eql(u8, await_node.getTypeAsString(), "await"));
+    try self.write("await ", .{});
+
+    // child 1: expression
+    const expr_node = node.child(1) orelse return Error.MissingRequiredChild;
+    var cursor = expr_node.cursor();
+    try formatter.depthFirstWalk(&cursor, self);
 }
 
 // Data Types and Literals
