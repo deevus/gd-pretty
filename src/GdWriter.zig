@@ -1489,8 +1489,23 @@ pub fn writeGetNode(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeUnaryOperator(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement unary operators (not, ~, -, +)
-    try self.writeTrimmed(node);
+    log.debug("writeUnaryOperator: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
+    assert(node.getTypeAsEnum(NodeType) == .unary_operator);
+
+    // child 0: operator token (-, +, !, ~, not)
+    const op_node = node.child(0) orelse return Error.MissingRequiredChild;
+    const op_text = op_node.text();
+    try self.write(op_text, .{});
+
+    // Keyword operators (not) need a space before the operand
+    if (std.mem.eql(u8, op_text, "not")) {
+        try self.write(" ", .{});
+    }
+
+    // child 1: operand expression
+    const operand_node = node.child(1) orelse return Error.MissingRequiredChild;
+    var cursor = operand_node.cursor();
+    try formatter.depthFirstWalk(&cursor, self);
 }
 
 pub fn writeAwaitExpression(self: *GdWriter, node: Node) Error!void {

@@ -21,6 +21,10 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
   - Handles basic `const NAME = value`, inferred type `const NAME := value`, and explicit type `const NAME: TYPE = value`
   - Normalizes spacing around `:`, `:=`, and `=` operators
   - Files: `src/GdWriter.zig`
+- **Unary Operator Formatting** - Implemented `writeUnaryOperator` for prefix operators
+  - Handles `-`, `+`, `!`, `~` (no space) and `not` (space before operand)
+  - Operands formatted via `depthFirstWalk` for proper nested expression handling
+  - Files: `src/GdWriter.zig`
 
 ### Fixed
 - **Comment Indentation for Tree-sitter Misassignment** - Comments at lower indent levels than the current context now preserve their original indentation
