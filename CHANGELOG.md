@@ -2,9 +2,37 @@
 
 This file tracks completed improvements and changes to the gd-pretty GDScript formatter.
 
-## [Unreleased] - February 24, 2026
+## [Unreleased] - March 1, 2026
 
 ### Added
+- **Expression Statement Formatting** - Implemented `writeExpressionStatement` to properly delegate to child expression formatters
+  - Expression statements in function bodies (assignments, function calls, etc.) now go through proper formatting
+  - Previously used `writeTrimmed` which preserved raw text without formatting
+  - Files: `src/GdWriter.zig`
+- **Assignment Formatting** - Implemented `writeAssignment` for proper spacing around `=` operator
+  - `y=2` is now formatted as `y = 2`
+  - LHS and RHS expressions are recursively formatted via `depthFirstWalk`
+  - Files: `src/GdWriter.zig`
+- **Augmented Assignment Formatting** - Implemented `writeAugmentedAssignment` for compound assignment operators
+  - `y+=1` -> `y += 1`, `x**=2` -> `x **= 2`, etc.
+  - All compound operators (`+=`, `-=`, `*=`, `/=`, `**=`, etc.) properly spaced
+  - Files: `src/GdWriter.zig`
+- **Unary Operator Support** - Added `unary_operator` to `GdNodeType` enum with stub handler
+  - Fixes silent data loss where `not`, `~`, `-` prefix expressions were being dropped
+  - Pre-existing bug in `binary_operator` and `writeVariableStatement` handlers now fixed
+  - Files: `src/enums.zig`, `src/GdWriter.zig`
+- **Await Expression Support** - Added `await_expression` to `GdNodeType` enum with stub handler
+  - Prevents `await` expressions from being silently dropped in expression contexts
+  - Files: `src/enums.zig`, `src/GdWriter.zig`
+
+### Fixed
+- **Return Statement Trailing Space** - Fixed `writeReturnStatement` adding trailing space on bare `return` statements
+  - `return` no longer produces `return ` with trailing whitespace
+  - Files: `src/GdWriter.zig`
+- **Silent Node Dropping** - Fixed `not` expressions being silently dropped in while loop conditions and variable statements
+  - `while (a * b) < (c * 2) and :` now correctly outputs `while (a * b) < (c * 2) and not (a > b or b > c):`
+  - `var c =  in [1]` now correctly outputs `var c = not 1 in [1] in [true]`
+  - Root cause: `unary_operator` node type was missing from the enum, causing `depthFirstWalk` to skip it
 - **Enum Formatting** - Implemented `writeEnumDefinition` and `writeEnumerator` for proper enum formatting
   - Anonymous and named enums: `enum {A, B}`, `enum Named {A, B}`
   - Enumerator values with spacing: `A = 1`

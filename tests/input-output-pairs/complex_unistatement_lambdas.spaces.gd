@@ -5,7 +5,7 @@ func bar(x, y):
 
 func baz():
     foo(func(): pass)
-    bar(func(): pass,func(): pass)
+    bar(func(): pass, func(): pass)
     var x1 = [func(): pass, func(): pass]
     var x2 = [
         func(): pass,
