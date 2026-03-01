@@ -2,7 +2,7 @@
 
 This file tracks improvements needed for the gd-pretty GDScript formatter.
 
-*Last updated: September 16, 2025*
+*Last updated: March 1, 2026*
 
 ## Critical Issues
 
@@ -13,9 +13,9 @@ None currently.
 ### 1. Implement Proper Language Construct Formatting
 **Priority: HIGH**
 - **Current State**: Most node types still have stub methods that preserve original text
-- **Done**: expression statements, assignments (`=`), augmented assignments (`+=`, `*=`, etc.), while loops, enums, dictionaries, comments
+- **Done**: expression statements, assignments (`=`), augmented assignments (`+=`, `*=`, etc.), while loops, if/elif/else, enums, dictionaries, comments, break/continue/breakpoint
 - **Goal**: Replace remaining stubs with proper formatting implementations for:
-  - **Control flow**: if/elif/else, for loops, match statements (proper indentation)
+  - **Control flow**: for loops, match statements (proper indentation)
   - **Literals**: strings, numbers, booleans (spacing and formatting)
   - **Operators**: comparisons (consistent spacing)
   - **Unary operators**: `not`, `~`, `-`, `+` (currently stub preserving text)
