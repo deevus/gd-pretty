@@ -2011,8 +2011,8 @@ pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
     // Some operators like "is not" produce 4 children: left, "is", "not", right
 
     // Fall back to writeTrimmed for unexpected child counts to avoid data loss
-    if (node.childCount() < 3) {
-        log.warn("writeBinaryOperator: expected >= 3 children, got {}", .{node.childCount()});
+    if (node.childCount() < 3 or node.childCount() > 4) {
+        log.warn("writeBinaryOperator: expected 3-4 children, got {}", .{node.childCount()});
         try self.writeTrimmed(node);
         return;
     }
@@ -2033,6 +2033,8 @@ pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
     // Handle compound operators with 4 children:
     // - "is not": left, "is", "not", right
     // - "not in": left, "not", "in", right
+    // Note: string comparison used because "not" is intentionally NOT in
+    // GdNodeType enum (adding it causes dispatch conflicts with not_in).
     if (node.childCount() == 4) {
         const child2 = node.child(2).?;
         const child2_str = child2.getTypeAsString();
