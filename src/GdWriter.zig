@@ -192,8 +192,7 @@ fn hasInlineComment(node: ?Node) bool {
 }
 
 fn isInlineComment(comment_node: Node) bool {
-    // Check if this comment appears on the same line as previous non-comment content
-    // For now, we'll use a simple heuristic: if there's a previous sibling on the same line
+    // Returns true if this comment is on the same line as a previous non-whitespace sibling
 
     const comment_start = comment_node.startPoint();
 
