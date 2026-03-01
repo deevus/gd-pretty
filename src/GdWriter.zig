@@ -853,7 +853,7 @@ pub fn writeIfStatement(self: *GdWriter, node: Node) Error!void {
         for (0..node.childCount()) |idx| {
             if (node.child(@intCast(idx))) |child| {
                 const trimmed_text = std.mem.trim(u8, child.text(), " \t\n\r");
-                log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(40, trimmed_text.len)] });
+                log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(20, trimmed_text.len)] });
             }
         }
     }
@@ -949,8 +949,122 @@ pub fn writeIfStatement(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeForStatement(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement for loops with proper indentation
-    try self.writeTrimmed(node);
+    log.debug("writeForStatement: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
+    assert(node.getTypeAsEnum(NodeType) == .for_statement);
+
+    if (comptime std.log.default_level == .debug) {
+        for (0..node.childCount()) |idx| {
+            if (node.child(@intCast(idx))) |child| {
+                const trimmed_text = std.mem.trim(u8, child.text(), " \t\n\r");
+                log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(20, trimmed_text.len)] });
+            }
+        }
+    }
+
+    var i: u32 = 0;
+
+    // for keyword
+    {
+        const for_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(for_node.getTypeAsEnum(NodeType) == .@"for");
+        try self.write("for ", .{});
+        i += 1;
+    }
+
+    // loop variable (identifier)
+    {
+        const ident_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(ident_node.getTypeAsEnum(NodeType) == .identifier);
+        try self.writeTrimmed(ident_node);
+        i += 1;
+    }
+
+    // Optional type annotation: ":" type
+    if (node.child(i)) |next| {
+        if (next.getTypeAsEnum(NodeType) == .@":") {
+            try self.write(": ", .{});
+            i += 1;
+
+            // type node
+            const type_node = node.child(i) orelse return Error.MissingRequiredChild;
+            var cursor = type_node.cursor();
+            try formatter.depthFirstWalk(&cursor, self);
+            i += 1;
+        }
+    }
+
+    // in keyword
+    {
+        const in_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(in_node.getTypeAsEnum(NodeType) == .@"in");
+        try self.write(" in ", .{});
+        i += 1;
+    }
+
+    // iterable expression
+    {
+        const expr_node = node.child(i) orelse return Error.MissingRequiredChild;
+        var cursor = expr_node.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+        i += 1;
+    }
+
+    // colon
+    {
+        const colon_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(colon_node.getTypeAsEnum(NodeType) == .@":");
+        try self.write(":", .{});
+        i += 1;
+    }
+
+    // Check for inline comment after colon
+    if (node.child(i)) |next_node| {
+        if (next_node.getTypeAsEnum(NodeType) == .comment and isInlineComment(next_node)) {
+            try self.handleComment(next_node);
+            i += 1;
+        }
+    }
+
+    // Write newline after colon (and inline comment if present)
+    try self.writeNewline();
+
+    // body (with comment handling)
+    {
+        var found_body = false;
+
+        while (i < node.childCount()) {
+            const child = node.child(i) orelse break;
+
+            const child_type = child.getTypeAsEnum(NodeType) orelse {
+                log.err("Expected body or comment after for statement, got {s}", .{child.getTypeAsString()});
+                return Error.UnexpectedNodeType;
+            };
+
+            switch (child_type) {
+                .comment => {
+                    try self.handleComment(child);
+                    i += 1;
+                    continue;
+                },
+                .body => {
+                    const old_indent = self.context.indent_level;
+                    self.context.indent_level += 1;
+                    try self.writeBody(child);
+                    self.context.indent_level = old_indent;
+                    found_body = true;
+                    break;
+                },
+                else => {
+                    log.err("Expected body or comment after for statement, got {s}", .{child.getTypeAsString()});
+                    return Error.UnexpectedNodeType;
+                },
+            }
+        }
+
+        if (!found_body) {
+            return Error.MissingRequiredChild;
+        }
+    }
 }
 
 pub fn writeWhileStatement(self: *GdWriter, node: Node) Error!void {

@@ -13,6 +13,10 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
 - **Break/Continue/Breakpoint Statement Support** - Added `breakpoint_statement`, `break_statement`, and `continue_statement` to the formatter
   - These keywords were previously missing from the enum, causing them to be silently dropped from output
   - Files: `src/enums.zig`, `src/GdWriter.zig`
+- **For Loop Formatting** - Implemented proper formatting for `for` loops with `writeForStatement`
+  - Handles basic `for i in expr:`, typed `for i: int in expr:`, inline comments, and nested loops
+  - Follows the same defensive body-finding pattern as `writeWhileStatement` and `writeIfStatement`
+  - Files: `src/GdWriter.zig`
 
 ### Fixed
 - **Comment Indentation for Tree-sitter Misassignment** - Comments at lower indent levels than the current context now preserve their original indentation
