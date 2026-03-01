@@ -1994,18 +1994,35 @@ pub fn writeFalse(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
+pub fn writeNull(self: *GdWriter, node: Node) Error!void {
+    try self.write("null", .{});
+    _ = node;
+}
+
+pub fn writeNot(self: *GdWriter, node: Node) Error!void {
+    try self.write("not", .{});
+    _ = node;
+}
+
+pub fn writeAttributeSubscript(self: *GdWriter, node: Node) Error!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeSubscriptArguments(self: *GdWriter, node: Node) Error!void {
+    try self.writeTrimmed(node);
+}
+
 // Expressions and Operations
 pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
     log.debug("writeBinaryOperator: children={}, text='{s}'", .{ node.childCount(), node.text()[0..@min(60, node.text().len)] });
 
     // Binary expressions have structure: left_expr operator right_expr
-    // assert(node.childCount() == 3);
+    // Some operators like "is not" produce 4 children: left, "is", "not", right
 
     const left = node.child(0).?;
     const op = node.child(1).?;
-    const right = node.child(2).?;
 
-    log.debug("writeBinaryOperator: left='{s}', op='{s}', right='{s}'", .{ left.text()[0..@min(20, left.text().len)], op.text(), right.text()[0..@min(20, right.text().len)] });
+    log.debug("writeBinaryOperator: left='{s}', op='{s}'", .{ left.text()[0..@min(20, left.text().len)], op.text() });
 
     // Write left operand
     var cursor = left.cursor();
@@ -2014,9 +2031,21 @@ pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
     // Write operator with spaces
     try self.write(" ", .{});
     try self.write(op.text(), .{});
+
+    // Handle "is not" - the "not" keyword is child(2) and the right operand is child(3)
+    var right_idx: u32 = 2;
+    if (node.childCount() > 3) {
+        const maybe_not = node.child(2).?;
+        if (maybe_not.getTypeAsEnum(NodeType) == .not) {
+            try self.write(" not", .{});
+            right_idx = 3;
+        }
+    }
+
     try self.write(" ", .{});
 
     // Write right operand
+    const right = node.child(right_idx).?;
     cursor = right.cursor();
     try formatter.depthFirstWalk(&cursor, self);
 }
