@@ -4,6 +4,17 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
 
 ## [Unreleased] - March 1, 2026
 
+### Fixed
+- **Missing Node Types Causing Silent Data Loss** - Added missing tree-sitter node types to the enum
+  - `null`: null literals were being silently dropped (e.g. `return null` → `return`)
+  - `subscript_arguments`: subscript arguments were being dropped
+  - Files: `src/enums.zig`, `src/GdWriter.zig`
+- **Compound Operator Handling** - Fixed `writeBinaryOperator` to handle `is not` and `not in` expressions
+  - `1 is not int` was producing `1 is` (both `not` and the type were dropped)
+  - `1 not in [1]` was producing `1 not` (the `in` and operand were dropped)
+  - Now correctly formats both with proper spacing
+  - Files: `src/GdWriter.zig`
+
 ### Added
 - **If/Elif/Else Statement Formatting** - Implemented proper formatting for if/elif/else statements
   - Replaces `writeTrimmed` stubs with structured formatting that handles conditions, bodies, inline comments, and indentation

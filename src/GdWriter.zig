@@ -1994,18 +1994,33 @@ pub fn writeFalse(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
+pub fn writeNull(self: *GdWriter, node: Node) Error!void {
+    try self.writeTrimmed(node);
+}
+
+pub fn writeSubscriptArguments(self: *GdWriter, node: Node) Error!void {
+    // TODO: Implement proper subscript arguments formatting
+    try self.writeTrimmed(node);
+}
+
 // Expressions and Operations
 pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
     log.debug("writeBinaryOperator: children={}, text='{s}'", .{ node.childCount(), node.text()[0..@min(60, node.text().len)] });
 
     // Binary expressions have structure: left_expr operator right_expr
-    // assert(node.childCount() == 3);
+    // Some operators like "is not" produce 4 children: left, "is", "not", right
+
+    // Fall back to writeTrimmed for unexpected child counts to avoid data loss
+    if (node.childCount() < 3 or node.childCount() > 4) {
+        log.warn("writeBinaryOperator: expected 3-4 children, got {}", .{node.childCount()});
+        try self.writeTrimmed(node);
+        return;
+    }
 
     const left = node.child(0).?;
     const op = node.child(1).?;
-    const right = node.child(2).?;
 
-    log.debug("writeBinaryOperator: left='{s}', op='{s}', right='{s}'", .{ left.text()[0..@min(20, left.text().len)], op.text(), right.text()[0..@min(20, right.text().len)] });
+    log.debug("writeBinaryOperator: left='{s}', op='{s}'", .{ left.text()[0..@min(20, left.text().len)], op.text() });
 
     // Write left operand
     var cursor = left.cursor();
@@ -2014,11 +2029,34 @@ pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
     // Write operator with spaces
     try self.write(" ", .{});
     try self.write(op.text(), .{});
-    try self.write(" ", .{});
 
-    // Write right operand
-    cursor = right.cursor();
-    try formatter.depthFirstWalk(&cursor, self);
+    // Handle compound operators with 4 children:
+    // - "is not": left, "is", "not", right
+    // - "not in": left, "not", "in", right
+    // Note: string comparison used because "not" is intentionally NOT in
+    // GdNodeType enum (adding it causes dispatch conflicts with not_in).
+    if (node.childCount() == 4) {
+        const child2 = node.child(2).?;
+        const child2_str = child2.getTypeAsString();
+        if (std.mem.eql(u8, child2_str, "not")) {
+            try self.write(" not", .{});
+        } else if (std.mem.eql(u8, child2_str, "in")) {
+            try self.write(" in", .{});
+        } else {
+            log.warn("writeBinaryOperator: unexpected 4-child binary expression, child(2) type={s}", .{child2_str});
+            try self.write(" ", .{});
+            try self.writeTrimmed(child2);
+        }
+        try self.write(" ", .{});
+        const right = node.child(3).?;
+        cursor = right.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+    } else {
+        try self.write(" ", .{});
+        const right = node.child(2).?;
+        cursor = right.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+    }
 }
 
 pub fn writeComparisonOperator(self: *GdWriter, node: Node) Error!void {
