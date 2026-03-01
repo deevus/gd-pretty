@@ -630,7 +630,7 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
                 .@"=" => {
                     try self.write("= ", .{});
                 },
-                .binary_operator, .call, .attribute => {
+                .binary_operator, .call, .attribute, .conditional_expression => {
                     var cursor = c.cursor();
                     try formatter.depthFirstWalk(&cursor, self);
                 },
@@ -2070,8 +2070,21 @@ pub fn writeComparisonOperator(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeConditionalExpression(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement ternary/conditional expressions
-    try self.writeTrimmed(node);
+    // Structure: value "if" condition "else" alternative
+    // Children: [value_expr, "if", condition_expr, "else", alt_expr]
+    for (0..node.childCount()) |idx| {
+        const child = node.child(@intCast(idx)) orelse return Error.MissingRequiredChild;
+        const child_type = child.getTypeAsEnum(NodeType);
+        if (child_type) |ct| {
+            if (ct == .@"if" or ct == .@"else") {
+                try self.write(" ", .{});
+                try self.write(child.text(), .{});
+                try self.write(" ", .{});
+                continue;
+            }
+        }
+        try formatter.renderNode(child, self);
+    }
 }
 
 pub fn writeAttributeCall(self: *GdWriter, node: Node) Error!void {
