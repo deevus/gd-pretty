@@ -2088,8 +2088,19 @@ pub fn writeArguments(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeParenthesizedExpression(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement expressions in parentheses
-    try self.writeTrimmed(node);
+    // Structure: "(" expression ")"
+    try self.write("(", .{});
+    for (0..node.childCount()) |idx| {
+        const child = node.child(@intCast(idx)) orelse return Error.MissingRequiredChild;
+        const child_type = child.getTypeAsEnum(NodeType);
+        if (child_type) |ct| {
+            // Skip the punctuation tokens — we write them ourselves
+            if (ct == .@"(" or ct == .@")") continue;
+        }
+        var cursor = child.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+    }
+    try self.write(")", .{});
 }
 
 // Type System

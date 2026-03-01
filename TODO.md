@@ -13,7 +13,7 @@ None currently.
 ### 1. Implement Proper Language Construct Formatting
 **Priority: HIGH**
 - **Current State**: Most node types still have stub methods that preserve original text
-- **Done**: expression statements, assignments (`=`), augmented assignments (`+=`, `*=`, etc.), while loops, if/elif/else, for loops, match statements, const declarations, unary operators, await expressions, enums, dictionaries, comments, break/continue/breakpoint, null literal, `is not`/`not in` operators, subscript_arguments (stub)
+- **Done**: expression statements, assignments (`=`), augmented assignments (`+=`, `*=`, etc.), while loops, if/elif/else, for loops, match statements, const declarations, unary operators, await expressions, enums, dictionaries, comments, break/continue/breakpoint, null literal, `is not`/`not in` operators, subscript_arguments (stub), parenthesized expressions
 - **Goal**: Replace remaining stubs with proper formatting implementations for:
   - **Literals**: strings, numbers, booleans (spacing and formatting)
   - **Operators**: comparisons (consistent spacing)
