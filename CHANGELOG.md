@@ -5,6 +5,12 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
 ## [Unreleased] - March 1, 2026
 
 ### Fixed
+- **Inline Comments at Module Level** - Fixed inline comments being placed on their own line instead of staying on the same line as the preceding statement
+  - `var z    # ccc` was being formatted as `var z\n # ccc` instead of `var z # ccc`
+  - `var x = "#" #` was being formatted as `var x = "#"\n #` instead of `var x = "#" #`
+  - Root cause: `writeSource` (module-level handler) had no inline comment detection, unlike `writeBody` which handled it correctly
+  - Affects 9 test files including `bug_127_hashtag_corner_case`, `simple_class_stmts`, `comment_corner_case`, annotation/property comment tests
+  - Files: `src/GdWriter.zig` (`writeSource`)
 - **Missing Node Types Causing Silent Data Loss** - Added missing tree-sitter node types to the enum
   - `null`: null literals were being silently dropped (e.g. `return null` → `return`)
   - `subscript_arguments`: subscript arguments were being dropped

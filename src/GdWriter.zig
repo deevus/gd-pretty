@@ -814,6 +814,16 @@ pub fn writeSource(self: *GdWriter, node: Node) Error!void {
         const child = node.child(i).?;
         log.debug("writeSource: processing child {}: node_type={s}", .{ i, child.getTypeAsString() });
 
+        // Check if this is an inline comment (on the same line as previous statement)
+        const is_inline_comment = child.getTypeAsEnum(NodeType) == .comment and isInlineComment(child);
+
+        if (is_inline_comment) {
+            try self.handleComment(child);
+            prev_child = child;
+            prev_wrote_output = true;
+            continue;
+        }
+
         // Add newline between statements, preserving blank lines from original source
         // Only emit separator if the previous child actually wrote output
         if (prev_child) |prev| {

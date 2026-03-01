@@ -1,5 +1,4 @@
-@tool
- # inline a
+@tool # inline a
 # a
 extends Node
 # b
@@ -8,17 +7,14 @@ extends Node
 var a
 
 # d
-@onready
- # inline b
+@onready # inline b
 # e
-var b
- # inline c
+var b # inline c
 # f
 
 @onready
 # g
-@export_range(1, 100, 1, "or_greater")
- # inline d
+@export_range(1, 100, 1, "or_greater") # inline d
 # h
 var c: int = 50
 # i

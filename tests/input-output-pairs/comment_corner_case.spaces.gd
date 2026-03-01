@@ -1,4 +1,3 @@
 var x
 ;
-var y
- # xxx
+var y # xxx
