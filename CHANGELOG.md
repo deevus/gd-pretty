@@ -16,6 +16,11 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
   - Files: `src/GdWriter.zig`
 
 ### Added
+- **Conditional Expression Formatting** - Implemented `writeConditionalExpression` for ternary expressions
+  - `val if cond else alt` now formats inner expressions via `depthFirstWalk`
+  - `1+2 if a>b else 3+4` becomes `1 + 2 if a > b else 3 + 4`
+  - Also added `conditional_expression` to `writeVariableStatement` dispatch so ternaries in variable declarations get formatted
+  - Files: `src/GdWriter.zig`
 - **Subscript Arguments Formatting** - Implemented `writeSubscriptArguments` to properly format expressions inside `[]` subscript access
   - Previously used `writeTrimmed`, so `p[1+1]` stayed as `p[1+1]` instead of `p[1 + 1]`
   - Writes `[`, formats inner expression via `renderNode`, then writes `]`
