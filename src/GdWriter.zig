@@ -853,7 +853,7 @@ pub fn writeIfStatement(self: *GdWriter, node: Node) Error!void {
         for (0..node.childCount()) |idx| {
             if (node.child(@intCast(idx))) |child| {
                 const trimmed_text = std.mem.trim(u8, child.text(), " \t\n\r");
-                log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(40, trimmed_text.len)] });
+                log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(20, trimmed_text.len)] });
             }
         }
     }
@@ -956,7 +956,7 @@ pub fn writeForStatement(self: *GdWriter, node: Node) Error!void {
         for (0..node.childCount()) |idx| {
             if (node.child(@intCast(idx))) |child| {
                 const trimmed_text = std.mem.trim(u8, child.text(), " \t\n\r");
-                log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(40, trimmed_text.len)] });
+                log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(20, trimmed_text.len)] });
             }
         }
     }
