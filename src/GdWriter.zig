@@ -1999,8 +1999,13 @@ pub fn writeNull(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeSubscriptArguments(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement proper subscript arguments formatting
-    try self.writeTrimmed(node);
+    // Structure: "[" expression "]"
+    // Use direct child access rather than writeDelimitedList to avoid
+    // trailing-comma-forces-multiline behavior inside subscript access.
+    const expr = node.child(1) orelse return Error.MissingRequiredChild;
+    try self.write("[", .{});
+    try formatter.renderNode(expr, self);
+    try self.write("]", .{});
 }
 
 // Expressions and Operations

@@ -16,6 +16,11 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
   - Files: `src/GdWriter.zig`
 
 ### Added
+- **Subscript Arguments Formatting** - Implemented `writeSubscriptArguments` to properly format expressions inside `[]` subscript access
+  - Previously used `writeTrimmed`, so `p[1+1]` stayed as `p[1+1]` instead of `p[1 + 1]`
+  - Writes `[`, formats inner expression via `renderNode`, then writes `]`
+  - Uses direct child access rather than `writeDelimitedList` to avoid multiline expansion in subscript context
+  - Files: `src/GdWriter.zig`
 - **Parenthesized Expression Formatting** - Implemented `writeParenthesizedExpression` to properly format inner expressions
   - Previously used `writeTrimmed`, so `(1+1)` stayed as `(1+1)` instead of `(1 + 1)`
   - Now writes `(`, formats child expressions via `depthFirstWalk`, then writes `)`
