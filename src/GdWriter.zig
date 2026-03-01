@@ -1515,10 +1515,12 @@ pub fn writePatternSection(self: *GdWriter, node: Node) Error!void {
                 try self.handleComment(child);
             },
             else => {
-                // Pattern expression — use writeTrimmed for safety since
-                // patterns can contain types unknown to the formatter
-                // (pattern_binding, pattern_array, etc.)
-                try self.writeTrimmed(child);
+                // Pattern expression — format through depthFirstWalk for
+                // proper operator spacing, dict/array formatting, etc.
+                // Pattern-specific types (pattern_binding, pattern_array)
+                // are not in the enum, so they are caught by the null
+                // check above and handled with writeTrimmed.
+                try formatter.renderNode(child, self);
             },
         }
 
