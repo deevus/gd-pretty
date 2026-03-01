@@ -2005,10 +2005,12 @@ pub fn writeNot(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeAttributeSubscript(self: *GdWriter, node: Node) Error!void {
+    // TODO: Implement proper attribute subscript formatting
     try self.writeTrimmed(node);
 }
 
 pub fn writeSubscriptArguments(self: *GdWriter, node: Node) Error!void {
+    // TODO: Implement proper subscript arguments formatting
     try self.writeTrimmed(node);
 }
 
@@ -2032,9 +2034,9 @@ pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
     try self.write(" ", .{});
     try self.write(op.text(), .{});
 
-    // Handle "is not" - the "not" keyword is child(2) and the right operand is child(3)
+    // Handle "is not" - 4 children: left, "is", "not", right
     var right_idx: u32 = 2;
-    if (node.childCount() > 3) {
+    if (node.childCount() == 4) {
         const maybe_not = node.child(2).?;
         if (maybe_not.getTypeAsEnum(NodeType) == .not) {
             try self.write(" not", .{});
