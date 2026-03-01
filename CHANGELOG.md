@@ -4,6 +4,14 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
 
 ## [Unreleased] - March 1, 2026
 
+### Added
+- **Match Pattern Expression Formatting** - Pattern expressions inside match statements are now formatted through the expression formatter
+  - `1*1` → `1 * 1`, `1+1` → `1 + 1`, `1<<1` → `1 << 1`, etc.
+  - `{"a":1,"b":2}` → `{"a": 1, "b": 2}` (proper dict spacing)
+  - `Vector3(1,1+1,1)` → `Vector3(1, 1 + 1, 1)` (call arg spacing)
+  - Pattern-specific types (pattern_binding, pattern_array) still use writeTrimmed
+  - Files: `src/GdWriter.zig` (`writePatternSection`)
+
 ### Fixed
 - **Inline Comments at Module Level** - Fixed inline comments being placed on their own line instead of staying on the same line as the preceding statement
   - `var z    # ccc` was being formatted as `var z\n # ccc` instead of `var z # ccc`
