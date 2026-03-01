@@ -937,6 +937,8 @@ pub fn writeAssignment(self: *GdWriter, node: Node) Error!void {
         try formatter.depthFirstWalk(&cursor, self);
     }
 
+    const op = node.child(1) orelse return Error.MissingRequiredChild;
+    assert(op.getTypeAsEnum(NodeType) == .@"=");
     try self.write(" = ", .{});
 
     const rhs = node.child(2) orelse return Error.MissingRequiredChild;
