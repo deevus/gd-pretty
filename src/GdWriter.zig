@@ -1070,7 +1070,7 @@ pub fn writeForStatement(self: *GdWriter, node: Node) Error!void {
     // in keyword
     {
         const in_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(in_node.getTypeAsEnum(NodeType) == .@"in");
+        assert(in_node.getTypeAsEnum(NodeType) == .in);
         try self.write(" in ", .{});
         i += 1;
     }
@@ -1362,7 +1362,10 @@ pub fn writeMatchBody(self: *GdWriter, node: Node) Error!void {
         const child = node.child(@intCast(idx)) orelse continue;
 
         const child_type = child.getTypeAsEnum(NodeType) orelse {
-            // Handle ERROR nodes and other unknown types gracefully
+            // Handle ERROR nodes and other unknown types gracefully.
+            // NOTE: tree-sitter-gdscript may produce ERROR nodes for ternary
+            // expressions in match patterns (e.g. "1 if 1 else 2:"), causing
+            // them to be split across lines. This is a grammar limitation.
             log.debug("writeMatchBody: unknown child type {s}, falling back to trimmed write", .{child.getTypeAsString()});
             try self.writeIndentLevel(self.context.indent_level);
             try self.writeTrimmed(child);
