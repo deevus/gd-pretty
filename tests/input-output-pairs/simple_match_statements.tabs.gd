@@ -53,6 +53,6 @@ class X:
 				pass
 			_:
 				pass
-		match Vector3(1,1,1):
+		match Vector3(1, 1, 1):
 			Vector3(1,1+1,1):
 				pass

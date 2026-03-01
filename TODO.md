@@ -13,12 +13,12 @@ None currently.
 ### 1. Implement Proper Language Construct Formatting
 **Priority: HIGH**
 - **Current State**: Most node types still have stub methods that preserve original text
-- **Done**: expression statements, assignments (`=`), augmented assignments (`+=`, `*=`, etc.), while loops, if/elif/else, for loops, const declarations, unary operators, await expressions, enums, dictionaries, comments, break/continue/breakpoint
+- **Done**: expression statements, assignments (`=`), augmented assignments (`+=`, `*=`, etc.), while loops, if/elif/else, for loops, match statements, const declarations, unary operators, await expressions, enums, dictionaries, comments, break/continue/breakpoint
 - **Goal**: Replace remaining stubs with proper formatting implementations for:
-  - **Control flow**: match statements (proper indentation)
   - **Literals**: strings, numbers, booleans (spacing and formatting)
   - **Operators**: comparisons (consistent spacing)
   - **Lambda expressions**: proper multiline formatting
+  - **Match pattern interiors**: expressions inside match patterns (e.g. `Vector3(1,1+1,1)`, `[1,1,1]`) use `writeTrimmed` and don't get operator spacing
 - **Files**: `src/GdWriter.zig`, `src/enums.zig`
 
 ### 2. Basic User Experience (Remaining)

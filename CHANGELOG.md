@@ -28,6 +28,12 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
 - **Await Expression Formatting** - Implemented `writeAwaitExpression` for async/await
   - Writes `await` keyword followed by the expression formatted via `depthFirstWalk`
   - Files: `src/GdWriter.zig`
+- **Match Statement Formatting** - Implemented `writeMatchStatement`, `writeMatchBody`, and `writePatternSection`
+  - Proper indentation for match blocks and pattern sections
+  - Handles comma-separated patterns, pattern guards (`when`), and inline comments
+  - Unknown pattern types (e.g. `pattern_binding`) handled gracefully via `writeTrimmed`
+  - ERROR nodes in match body handled gracefully without crashing
+  - Files: `src/GdWriter.zig`
 
 ### Fixed
 - **Comment Indentation for Tree-sitter Misassignment** - Comments at lower indent levels than the current context now preserve their original indentation

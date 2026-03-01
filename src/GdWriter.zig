@@ -1070,7 +1070,7 @@ pub fn writeForStatement(self: *GdWriter, node: Node) Error!void {
     // in keyword
     {
         const in_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(in_node.getTypeAsEnum(NodeType) == .@"in");
+        assert(in_node.getTypeAsEnum(NodeType) == .in);
         try self.write(" in ", .{});
         i += 1;
     }
@@ -1294,18 +1294,222 @@ pub fn writeExpressionStatement(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeMatchStatement(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement match statements with proper indentation
-    try self.writeTrimmed(node);
+    log.debug("writeMatchStatement: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
+    assert(node.getTypeAsEnum(NodeType) == .match_statement);
+
+    var i: u32 = 0;
+
+    // match keyword
+    {
+        const match_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(match_node.getTypeAsEnum(NodeType) == .match);
+        try self.write("match ", .{});
+        i += 1;
+    }
+
+    // value expression
+    {
+        const value_node = node.child(i) orelse return Error.MissingRequiredChild;
+        var cursor = value_node.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+        i += 1;
+    }
+
+    // colon
+    {
+        const colon_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(colon_node.getTypeAsEnum(NodeType) == .@":");
+        try self.write(":", .{});
+        i += 1;
+    }
+
+    // Check for inline comment after colon
+    if (node.child(i)) |next_node| {
+        if (next_node.getTypeAsEnum(NodeType) == .comment and isInlineComment(next_node)) {
+            try self.handleComment(next_node);
+            i += 1;
+        }
+    }
+
+    try self.writeNewline();
+
+    // match_body
+    {
+        const body_node = node.child(i) orelse return Error.MissingRequiredChild;
+        assert(body_node.getTypeAsEnum(NodeType) == .match_body);
+        const old_indent = self.context.indent_level;
+        self.context.indent_level += 1;
+        try self.writeMatchBody(body_node);
+        self.context.indent_level = old_indent;
+    }
 }
 
 pub fn writeMatchBody(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement match body with proper indentation
-    try self.writeTrimmed(node);
+    log.debug("writeMatchBody: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
+    assert(node.getTypeAsEnum(NodeType) == .match_body);
+
+    // match_body contains pattern_section children (and possibly ERROR nodes
+    // from tree-sitter grammar limitations, e.g. ternary in patterns).
+    // Write newlines *between* sections (not after the last) to avoid
+    // trailing newlines that create blank lines with the parent's spacing.
+    var after_error = false;
+    var first_section = true;
+    for (0..node.childCount()) |idx| {
+        const child = node.child(@intCast(idx)) orelse continue;
+
+        const child_type = child.getTypeAsEnum(NodeType) orelse {
+            // ERROR/unknown nodes: write inline without newline so they
+            // merge with the next pattern_section (preserves source text).
+            // Consecutive ERROR nodes are also handled — each is written
+            // inline and the after_error flag persists until a pattern_section.
+            log.debug("writeMatchBody: unknown child type {s}, writing inline", .{child.getTypeAsString()});
+            if (!after_error) {
+                if (!first_section) {
+                    try self.writeNewline();
+                }
+                try self.writeIndentLevel(self.context.indent_level);
+            }
+            try self.writeTrimmed(child);
+            after_error = true;
+            continue;
+        };
+
+        switch (child_type) {
+            .pattern_section => {
+                if (after_error) {
+                    // Space between ERROR node content and pattern continuation
+                    try self.write(" ", .{});
+                    after_error = false;
+                } else {
+                    if (!first_section) {
+                        try self.writeNewline();
+                    }
+                    try self.writeIndentLevel(self.context.indent_level);
+                }
+                try self.writePatternSection(child);
+                first_section = false;
+            },
+            .comment => {
+                try self.handleComment(child);
+                first_section = false;
+            },
+            else => {
+                log.debug("writeMatchBody: unexpected child type {s}, falling back to trimmed write", .{child.getTypeAsString()});
+                if (!first_section) {
+                    try self.writeNewline();
+                }
+                try self.writeIndentLevel(self.context.indent_level);
+                try self.writeTrimmed(child);
+                first_section = false;
+                after_error = false;
+            },
+        }
+    }
 }
 
 pub fn writePatternSection(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement match patterns
-    try self.writeTrimmed(node);
+    log.debug("writePatternSection: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
+    assert(node.getTypeAsEnum(NodeType) == .pattern_section);
+
+    var i: u32 = 0;
+
+    // Write pattern expressions (comma-separated), then colon, then body
+    while (i < node.childCount()) {
+        const child = node.child(i) orelse break;
+
+        const child_type = child.getTypeAsEnum(NodeType) orelse {
+            // Unknown pattern type — use writeTrimmed for safety
+            try self.writeTrimmed(child);
+            i += 1;
+            continue;
+        };
+
+        switch (child_type) {
+            .@":" => {
+                try self.write(":", .{});
+                i += 1;
+
+                // Check for inline comment after colon
+                if (node.child(i)) |next_node| {
+                    if (next_node.getTypeAsEnum(NodeType) == .comment and isInlineComment(next_node)) {
+                        try self.handleComment(next_node);
+                        i += 1;
+                    }
+                }
+
+                try self.writeNewline();
+
+                // body (with comment handling)
+                var found_body = false;
+                while (i < node.childCount()) {
+                    const body_child = node.child(i) orelse break;
+                    const body_child_type = body_child.getTypeAsEnum(NodeType) orelse {
+                        // ERROR node in body position — fall back to writeTrimmed
+                        log.debug("pattern_section body: unknown type {s}, falling back to writeTrimmed", .{body_child.getTypeAsString()});
+                        try self.writeIndentLevel(self.context.indent_level + 1);
+                        try self.writeTrimmed(body_child);
+                        i += 1;
+                        continue;
+                    };
+
+                    switch (body_child_type) {
+                        .comment => {
+                            try self.handleComment(body_child);
+                            i += 1;
+                            continue;
+                        },
+                        .body => {
+                            const old_indent = self.context.indent_level;
+                            self.context.indent_level += 1;
+                            try self.writeBody(body_child);
+                            self.context.indent_level = old_indent;
+                            found_body = true;
+                            break;
+                        },
+                        else => {
+                            log.debug("pattern_section body: unexpected type {s}, falling back to writeTrimmed", .{body_child.getTypeAsString()});
+                            try self.writeIndentLevel(self.context.indent_level + 1);
+                            try self.writeTrimmed(body_child);
+                            i += 1;
+                            continue;
+                        },
+                    }
+                }
+
+                if (!found_body) {
+                    return Error.MissingRequiredChild;
+                }
+                break;
+            },
+            .@"," => {
+                try self.write(", ", .{});
+            },
+            .pattern_guard => {
+                try self.write(" ", .{});
+                // pattern_guard children: "when" keyword, condition expression
+                for (0..child.childCount()) |gi| {
+                    const guard_child = child.child(@intCast(gi)) orelse continue;
+                    if (guard_child.getTypeAsEnum(NodeType) == .when) {
+                        try self.write("when ", .{});
+                    } else {
+                        var cursor = guard_child.cursor();
+                        try formatter.depthFirstWalk(&cursor, self);
+                    }
+                }
+            },
+            .comment => {
+                try self.handleComment(child);
+            },
+            else => {
+                // Pattern expression — use writeTrimmed for safety since
+                // patterns can contain types unknown to the formatter
+                // (pattern_binding, pattern_array, etc.)
+                try self.writeTrimmed(child);
+            },
+        }
+
+        i += 1;
+    }
 }
 
 pub fn writeElseClause(self: *GdWriter, node: Node) Error!void {
