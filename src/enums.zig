@@ -82,6 +82,7 @@ pub const GdNodeType = enum {
     unary_operator,
     await_expression,
     pattern_guard,
+    when,
     comment,
     breakpoint_statement,
     break_statement,

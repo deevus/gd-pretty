@@ -18,6 +18,7 @@ None currently.
   - **Literals**: strings, numbers, booleans (spacing and formatting)
   - **Operators**: comparisons (consistent spacing)
   - **Lambda expressions**: proper multiline formatting
+  - **Match pattern interiors**: expressions inside match patterns (e.g. `Vector3(1,1+1,1)`, `[1,1,1]`) use `writeTrimmed` and don't get operator spacing
 - **Files**: `src/GdWriter.zig`, `src/enums.zig`
 
 ### 2. Basic User Experience (Remaining)

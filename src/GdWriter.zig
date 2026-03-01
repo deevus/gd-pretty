@@ -1400,6 +1400,7 @@ pub fn writeMatchBody(self: *GdWriter, node: Node) Error!void {
                 try self.writeIndentLevel(self.context.indent_level);
                 try self.writeTrimmed(child);
                 first_section = false;
+                after_error = false;
             },
         }
     }
@@ -1480,7 +1481,7 @@ pub fn writePatternSection(self: *GdWriter, node: Node) Error!void {
                 // pattern_guard children: "when" keyword, condition expression
                 for (0..child.childCount()) |gi| {
                     const guard_child = child.child(@intCast(gi)) orelse continue;
-                    if (std.mem.eql(u8, guard_child.getTypeAsString(), "when")) {
+                    if (guard_child.getTypeAsEnum(NodeType) == .when) {
                         try self.write("when ", .{});
                     } else {
                         var cursor = guard_child.cursor();
