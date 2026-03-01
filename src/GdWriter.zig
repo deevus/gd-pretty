@@ -492,18 +492,8 @@ pub fn writeBreakStatement(self: *GdWriter, node: Node) Error!void {
     try self.write("break", .{});
 }
 
-pub fn writeBreak(self: *GdWriter, node: Node) Error!void {
-    _ = node;
-    try self.write("break", .{});
-}
-
 pub fn writeContinueStatement(self: *GdWriter, node: Node) Error!void {
     assert(node.getTypeAsEnum(NodeType) == .continue_statement);
-    try self.write("continue", .{});
-}
-
-pub fn writeContinue(self: *GdWriter, node: Node) Error!void {
-    _ = node;
     try self.write("continue", .{});
 }
 
@@ -1824,6 +1814,12 @@ pub fn handleComment(self: *GdWriter, comment_node: Node) Error!void {
         // indentation-based languages where comments between dedented blocks get absorbed
         // into the preceding body).
         // Column 0 comments are always normalized to the context indent level.
+        //
+        // NOTE: original_column is a raw byte offset from tree-sitter. For tab-indented
+        // sources (1 tab = 1 byte = 1 indent level), this comparison works correctly.
+        // For space-indented sources (e.g. 4 spaces = 1 level), original_column would be
+        // larger than indent_level, so the condition is never true and context indent is
+        // always used (safe fallback, but the misassignment fix won't trigger).
         const original_column: u32 = @intCast(comment_node.startPoint().column);
         const effective_indent = if (original_column > 0 and original_column < self.context.indent_level)
             original_column
