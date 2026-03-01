@@ -2019,6 +2019,13 @@ pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
     // Binary expressions have structure: left_expr operator right_expr
     // Some operators like "is not" produce 4 children: left, "is", "not", right
 
+    // Fall back to writeTrimmed for unexpected child counts to avoid data loss
+    if (node.childCount() < 3) {
+        log.warn("writeBinaryOperator: expected >= 3 children, got {}", .{node.childCount()});
+        try self.writeTrimmed(node);
+        return;
+    }
+
     const left = node.child(0).?;
     const op = node.child(1).?;
 
@@ -2040,7 +2047,11 @@ pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
             try self.write(" not", .{});
             right_idx = 3;
         } else {
+            // Unknown 4-child binary expression — fall back to writeTrimmed
+            // to avoid silently dropping child(3)
             log.warn("writeBinaryOperator: unexpected 4-child binary expression, child(2) type={s}", .{maybe_not.getTypeAsString()});
+            try self.writeTrimmed(node);
+            return;
         }
     }
 
@@ -2048,6 +2059,7 @@ pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
 
     // Write right operand
     const right = node.child(right_idx).?;
+    log.debug("writeBinaryOperator: right='{s}'", .{right.text()[0..@min(20, right.text().len)]});
     cursor = right.cursor();
     try formatter.depthFirstWalk(&cursor, self);
 }
