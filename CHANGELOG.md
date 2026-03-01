@@ -16,6 +16,10 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
   - Files: `src/GdWriter.zig`
 
 ### Added
+- **Variable Statement Expression Dispatch** - Added `subscript` to `writeVariableStatement` dispatch
+  - Subscript expressions in variable declarations now route through `depthFirstWalk` instead of raw text heuristic
+  - `var b = p[[1,2,3,]]` now properly formats the inner array (trailing comma triggers multiline)
+  - Files: `src/GdWriter.zig`
 - **Conditional Expression Formatting** - Implemented `writeConditionalExpression` for ternary expressions
   - `val if cond else alt` now formats inner expressions via `depthFirstWalk`
   - `1+2 if a>b else 3+4` becomes `1 + 2 if a > b else 3 + 4`

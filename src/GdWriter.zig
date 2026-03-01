@@ -630,7 +630,12 @@ pub fn writeVariableStatement(self: *GdWriter, node: Node) Error!void {
                 .@"=" => {
                     try self.write("= ", .{});
                 },
-                .binary_operator, .call, .attribute, .conditional_expression => {
+                .binary_operator,
+                .call,
+                .attribute,
+                .conditional_expression,
+                .subscript,
+                => {
                     var cursor = c.cursor();
                     try formatter.depthFirstWalk(&cursor, self);
                 },
