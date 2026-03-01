@@ -1998,15 +1998,6 @@ pub fn writeNull(self: *GdWriter, node: Node) Error!void {
     try self.writeTrimmed(node);
 }
 
-pub fn writeNot(self: *GdWriter, node: Node) Error!void {
-    try self.writeTrimmed(node);
-}
-
-pub fn writeAttributeSubscript(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement proper attribute subscript formatting
-    try self.writeTrimmed(node);
-}
-
 pub fn writeSubscriptArguments(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement proper subscript arguments formatting
     try self.writeTrimmed(node);
@@ -2039,29 +2030,31 @@ pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
     try self.write(" ", .{});
     try self.write(op.text(), .{});
 
-    // Handle "is not" - 4 children: left, "is", "not", right
-    var right_idx: u32 = 2;
+    // Handle compound operators with 4 children:
+    // - "is not": left, "is", "not", right
+    // - "not in": left, "not", "in", right
     if (node.childCount() == 4) {
-        const maybe_not = node.child(2).?;
-        if (maybe_not.getTypeAsEnum(NodeType) == .not) {
+        const child2 = node.child(2).?;
+        const child2_str = child2.getTypeAsString();
+        if (std.mem.eql(u8, child2_str, "not")) {
             try self.write(" not", .{});
-            right_idx = 3;
+        } else if (std.mem.eql(u8, child2_str, "in")) {
+            try self.write(" in", .{});
         } else {
-            // Unknown 4-child binary expression — fall back to writeTrimmed
-            // to avoid silently dropping child(3)
-            log.warn("writeBinaryOperator: unexpected 4-child binary expression, child(2) type={s}", .{maybe_not.getTypeAsString()});
-            try self.writeTrimmed(node);
-            return;
+            log.warn("writeBinaryOperator: unexpected 4-child binary expression, child(2) type={s}", .{child2_str});
+            try self.write(" ", .{});
+            try self.writeTrimmed(child2);
         }
+        try self.write(" ", .{});
+        const right = node.child(3).?;
+        cursor = right.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+    } else {
+        try self.write(" ", .{});
+        const right = node.child(2).?;
+        cursor = right.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
     }
-
-    try self.write(" ", .{});
-
-    // Write right operand
-    const right = node.child(right_idx).?;
-    log.debug("writeBinaryOperator: right='{s}'", .{right.text()[0..@min(20, right.text().len)]});
-    cursor = right.cursor();
-    try formatter.depthFirstWalk(&cursor, self);
 }
 
 pub fn writeComparisonOperator(self: *GdWriter, node: Node) Error!void {

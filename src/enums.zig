@@ -84,8 +84,6 @@ pub const GdNodeType = enum {
     pattern_guard,
     when,
     null,
-    not,
-    attribute_subscript,
     subscript_arguments,
     comment,
     breakpoint_statement,
