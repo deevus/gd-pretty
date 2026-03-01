@@ -12,7 +12,7 @@ func test_while_loop_edge_cases():
     var a = 10
     var b = 20
     var c = 30
-    while (a * b) < (c * 2) and :
+    while (a * b) < (c * 2) and not (a > b or b > c):
         a += 1
         b += 2
         c += 3
