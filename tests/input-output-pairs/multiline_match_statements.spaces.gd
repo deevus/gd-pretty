@@ -3,8 +3,7 @@ class X:
         match x:
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1:
                 pass
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" if true else
-            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb":
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" if true else "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb":
                 pass
             true or false or true or false or true or false or true or false or true or false or true or false or true or false or true:
                 pass

@@ -43,8 +43,7 @@ class X:
                 pass
             1 or 2:
                 pass
-            1 if 1 else
-            2:
+            1 if 1 else 2:
                 pass
             2 when true:
                 pass

@@ -1357,25 +1357,31 @@ pub fn writeMatchBody(self: *GdWriter, node: Node) Error!void {
     log.debug("writeMatchBody: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
     assert(node.getTypeAsEnum(NodeType) == .match_body);
 
-    // match_body contains pattern_section children
+    // match_body contains pattern_section children (and possibly ERROR nodes
+    // from tree-sitter grammar limitations, e.g. ternary in patterns).
+    var after_error = false;
     for (0..node.childCount()) |idx| {
         const child = node.child(@intCast(idx)) orelse continue;
 
         const child_type = child.getTypeAsEnum(NodeType) orelse {
-            // Handle ERROR nodes and other unknown types gracefully.
-            // NOTE: tree-sitter-gdscript may produce ERROR nodes for ternary
-            // expressions in match patterns (e.g. "1 if 1 else 2:"), causing
-            // them to be split across lines. This is a grammar limitation.
-            log.debug("writeMatchBody: unknown child type {s}, falling back to trimmed write", .{child.getTypeAsString()});
+            // ERROR/unknown nodes: write inline without newline so they
+            // merge with the next pattern_section (preserves source text).
+            log.debug("writeMatchBody: unknown child type {s}, writing inline", .{child.getTypeAsString()});
             try self.writeIndentLevel(self.context.indent_level);
             try self.writeTrimmed(child);
-            try self.writeNewline();
+            after_error = true;
             continue;
         };
 
         switch (child_type) {
             .pattern_section => {
-                try self.writeIndentLevel(self.context.indent_level);
+                if (after_error) {
+                    // Space between ERROR node content and pattern continuation
+                    try self.write(" ", .{});
+                    after_error = false;
+                } else {
+                    try self.writeIndentLevel(self.context.indent_level);
+                }
                 try self.writePatternSection(child);
                 try self.writeNewline();
             },
@@ -1383,7 +1389,6 @@ pub fn writeMatchBody(self: *GdWriter, node: Node) Error!void {
                 try self.handleComment(child);
             },
             else => {
-                // Handle ERROR nodes and other unexpected types gracefully
                 log.debug("writeMatchBody: unexpected child type {s}, falling back to trimmed write", .{child.getTypeAsString()});
                 try self.writeIndentLevel(self.context.indent_level);
                 try self.writeTrimmed(child);
