@@ -25,6 +25,9 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
   - Handles `-`, `+`, `!`, `~` (no space) and `not` (space before operand)
   - Operands formatted via `depthFirstWalk` for proper nested expression handling
   - Files: `src/GdWriter.zig`
+- **Await Expression Formatting** - Implemented `writeAwaitExpression` for async/await
+  - Writes `await` keyword followed by the expression formatted via `depthFirstWalk`
+  - Files: `src/GdWriter.zig`
 
 ### Fixed
 - **Comment Indentation for Tree-sitter Misassignment** - Comments at lower indent levels than the current context now preserve their original indentation
