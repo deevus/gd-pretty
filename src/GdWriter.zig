@@ -896,46 +896,55 @@ pub fn writeIfStatement(self: *GdWriter, node: Node) Error!void {
     // Write newline after colon (and inline comment if present)
     try self.writeNewline();
 
-    // body
+    // body and remaining children (elif_clause, else_clause, comments)
     {
-        const body_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(body_node.getTypeAsEnum(NodeType) == .body);
-        const old_indent = self.context.indent_level;
-        self.context.indent_level += 1;
-        try self.writeBody(body_node);
-        self.context.indent_level = old_indent;
-        i += 1;
-    }
+        var found_body = false;
 
-    // Process remaining children (elif_clause, else_clause, comments)
-    while (i < node.childCount()) {
-        const child = node.child(i) orelse break;
-        const child_type = child.getTypeAsEnum(NodeType) orelse {
-            log.err("Expected elif_clause, else_clause, or comment in if_statement, got {s}", .{child.getTypeAsString()});
-            return Error.UnexpectedNodeType;
-        };
+        while (i < node.childCount()) {
+            const child = node.child(i) orelse break;
 
-        switch (child_type) {
-            .elif_clause => {
-                try self.writeNewline();
-                try self.writeIndentLevel(self.context.indent_level);
-                try self.writeElifClause(child);
-            },
-            .else_clause => {
-                try self.writeNewline();
-                try self.writeIndentLevel(self.context.indent_level);
-                try self.writeElseClause(child);
-            },
-            .comment => {
-                try self.handleComment(child);
-            },
-            else => {
-                log.err("Expected elif_clause, else_clause, or comment in if_statement, got {s}", .{child.getTypeAsString()});
+            const child_type = child.getTypeAsEnum(NodeType) orelse {
+                log.err("Expected body, elif_clause, else_clause, or comment in if_statement, got {s}", .{child.getTypeAsString()});
                 return Error.UnexpectedNodeType;
-            },
+            };
+
+            switch (child_type) {
+                .comment => {
+                    try self.handleComment(child);
+                    i += 1;
+                    continue;
+                },
+                .body => {
+                    const old_indent = self.context.indent_level;
+                    self.context.indent_level += 1;
+                    try self.writeBody(child);
+                    self.context.indent_level = old_indent;
+                    found_body = true;
+                    i += 1;
+                    continue;
+                },
+                .elif_clause => {
+                    try self.writeNewline();
+                    try self.writeIndentLevel(self.context.indent_level);
+                    try self.writeElifClause(child);
+                },
+                .else_clause => {
+                    try self.writeNewline();
+                    try self.writeIndentLevel(self.context.indent_level);
+                    try self.writeElseClause(child);
+                },
+                else => {
+                    log.err("Expected body, elif_clause, else_clause, or comment in if_statement, got {s}", .{child.getTypeAsString()});
+                    return Error.UnexpectedNodeType;
+                },
+            }
+
+            i += 1;
         }
 
-        i += 1;
+        if (!found_body) {
+            return Error.MissingRequiredChild;
+        }
     }
 }
 
