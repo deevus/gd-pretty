@@ -4,7 +4,21 @@ This file tracks completed improvements and changes to the gd-pretty GDScript fo
 
 ## [Unreleased] - March 1, 2026
 
+### Added
+- **If/Elif/Else Statement Formatting** - Implemented proper formatting for if/elif/else statements
+  - Replaces `writeTrimmed` stubs with structured formatting that handles conditions, bodies, inline comments, and indentation
+  - Follows the same pattern as the existing `writeWhileStatement` implementation
+  - Properly formats single-line if statements into multi-line format with correct indentation
+  - Files: `src/GdWriter.zig`
+- **Break/Continue/Breakpoint Statement Support** - Added `breakpoint_statement`, `break_statement`, and `continue_statement` to the formatter
+  - These keywords were previously missing from the enum, causing them to be silently dropped from output
+  - Files: `src/enums.zig`, `src/GdWriter.zig`
+
 ### Fixed
+- **Comment Indentation for Tree-sitter Misassignment** - Comments at lower indent levels than the current context now preserve their original indentation
+  - Tree-sitter can misassign comments between dedented blocks to the preceding body at a deeper level
+  - Uses the comment's source column position to detect and correct this
+  - Files: `src/GdWriter.zig` (`handleComment`)
 - **class_name extends on same line** - `class_name Foo extends Node` is no longer split into two lines
   - Detects `class_name_statement` followed by `extends_statement` in `writeSource` and emits a space instead of a newline
   - Preserves intentional blank lines: if a blank line separates the two declarations, they remain on separate lines

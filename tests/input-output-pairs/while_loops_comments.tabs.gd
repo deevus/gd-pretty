@@ -2,10 +2,10 @@ func test_while_loops_with_comments():
 	# While loop with inline comment after colon
 	while true: # This comment should be preserved
 		print("loop body")
-		
+		break
 
-		# While loop with comment before condition
-		# This is a counter loop
+	# While loop with comment before condition
+	# This is a counter loop
 	var i = 0
 	while i < 10: # Loop until we reach 10
 		print(i) # Print current value
@@ -34,7 +34,7 @@ func test_while_loops_with_comments():
 		# Important: this comment should be preserved
 		do_work()
 
-		# While loop with comment after body
+	# While loop with comment after body
 	while has_work():
 		process_work()
 # End of work processing

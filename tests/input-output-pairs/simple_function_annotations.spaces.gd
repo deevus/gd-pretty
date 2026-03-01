@@ -30,7 +30,10 @@ func f():
     if true:
         @warning_ignore("unused_variable")
         @warning_ignore("unused_variable")
-        var x: Array[int] = [ 1, 2, ]
+        var x: Array[int] = [
+            1,
+            2,
+        ]
 
 func g():
     @warning_ignore("unused_variable")

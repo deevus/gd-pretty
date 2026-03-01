@@ -3,12 +3,12 @@ func test_while_loop_edge_cases():
     while false:
         pass
 
-        # While loop with single statement body
+    # While loop with single statement body
     var counter = 5
     while counter > 0:
         counter -= 1
 
-        # While loop with complex condition expression
+    # While loop with complex condition expression
     var a = 10
     var b = 20
     var c = 30
@@ -17,12 +17,12 @@ func test_while_loop_edge_cases():
         b += 2
         c += 3
 
-        # While loop with lambda in condition
+    # While loop with lambda in condition
     var condition_func = func() -> bool: return true
     while condition_func.call():
-        
+        break
 
-        # While loop with array/dictionary access in condition
+    # While loop with array/dictionary access in condition
     var data = {"running": true, "count": 0}
     var items = [1, 2, 3, 4, 5]
     while data["running"] and data["count"] < items.size():
@@ -36,7 +36,7 @@ func test_while_loop_edge_cases():
     while obj.get_state().is_valid().check():
         obj.update().process()
 
-        # While loop with continue and break
+    # While loop with continue and break
     var num = 0
     while num < 10:
         num += 1
@@ -46,7 +46,7 @@ func test_while_loop_edge_cases():
             break
         print("Number:", num)
 
-        # While loop with try-catch equivalent (using error handling)
+    # While loop with try-catch equivalent (using error handling)
     var attempts = 0
     while attempts < 5:
         var result = risky_operation()
