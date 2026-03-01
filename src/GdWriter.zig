@@ -1995,13 +1995,11 @@ pub fn writeFalse(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeNull(self: *GdWriter, node: Node) Error!void {
-    try self.write("null", .{});
-    _ = node;
+    try self.writeTrimmed(node);
 }
 
 pub fn writeNot(self: *GdWriter, node: Node) Error!void {
-    try self.write("not", .{});
-    _ = node;
+    try self.writeTrimmed(node);
 }
 
 pub fn writeAttributeSubscript(self: *GdWriter, node: Node) Error!void {
@@ -2041,6 +2039,8 @@ pub fn writeBinaryOperator(self: *GdWriter, node: Node) Error!void {
         if (maybe_not.getTypeAsEnum(NodeType) == .not) {
             try self.write(" not", .{});
             right_idx = 3;
+        } else {
+            log.warn("writeBinaryOperator: unexpected 4-child binary expression, child(2) type={s}", .{maybe_not.getTypeAsString()});
         }
     }
 
