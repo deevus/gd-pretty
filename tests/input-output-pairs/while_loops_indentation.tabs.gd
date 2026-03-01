@@ -37,6 +37,7 @@ func test_deep_indentation():
 				_:
 					print("Something else")
 
+
 func test_lambda_with_while():
 	# While loop inside lambda
 	var processor = func():
@@ -65,6 +66,7 @@ func test_mixed_control_structures():
 						print("Even zero")
 					2:
 						print("Even two")
+
 			else:
 				var temp = 0
 				while temp < j:

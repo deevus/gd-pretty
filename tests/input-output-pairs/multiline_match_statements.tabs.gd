@@ -1,9 +1,10 @@
 class X:
 	func foo(x):
 		match x:
-			1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1:
+			1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1:
 				pass
-			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" if true else "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb":
+			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" if true else
+			"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb":
 				pass
 			true or false or true or false or true or false or true or false or true or false or true or false or true or false or true:
 				pass
@@ -37,9 +38,10 @@ class X:
 				pass
 			[_,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]:
 				pass
-			[_,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] when [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]:
+			[_,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] when [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]:
 				pass
 			{'aaaaa', 'bbbbbbbbbbbbbbbbbbbbb': 1111, 'ccccccccccccccccccccc': 1111, 'ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd': 1111}:
 				pass
 			[1,2,]:
 				pass
+
