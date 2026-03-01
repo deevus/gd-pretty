@@ -15,8 +15,7 @@ func actual_params():
 	foo(func():
 		var x = 1
 		if x > 1:
-			print(x)
-	)
+			print(x))
 
 	bar(func():
 		var x = 1
@@ -26,16 +25,13 @@ func actual_params():
 
 	bar(func():
 		var x = 1
-		return x,
-		func():
+		return x, func():
 			var y = 1
 			return y)
 
 	bar(func():
 		var x = 1
-		return x,
-
-		func():
+		return x, func():
 			var y = 1
 			return y)
 
@@ -49,8 +45,7 @@ func actual_params():
 	bar(func():
 		var x = 1
 		if x > 0:
-			print(x),
-		func():
+			print(x), func():
 			var y = 1
 			return y)
 

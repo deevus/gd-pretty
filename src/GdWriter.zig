@@ -754,9 +754,12 @@ pub fn writeReturnStatement(self: *GdWriter, node: Node) Error!void {
 
     const return_node = node.child(0) orelse return Error.MissingRequiredChild;
     assert(return_node.getTypeAsEnum(NodeType) == .@"return");
-    try self.write("return ", .{});
 
-    var next_node = node.child(1) orelse return;
+    var next_node = node.child(1) orelse {
+        try self.write("return", .{});
+        return;
+    };
+    try self.write("return ", .{});
     log.debug("writeReturnStatement: processing return value of type {s}", .{next_node.getTypeAsString()});
 
     var cursor = next_node.cursor();
@@ -922,18 +925,59 @@ pub fn writeWhileStatement(self: *GdWriter, node: Node) Error!void {
 }
 
 pub fn writeAssignment(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement variable assignments (var = value)
-    try self.writeTrimmed(node);
+    log.debug("writeAssignment: children={}, text='{s}'", .{ node.childCount(), node.text()[0..@min(40, node.text().len)] });
+
+    // assignment: LHS = RHS
+    // child 0: LHS expression
+    // child 1: = operator
+    // child 2: RHS expression
+    const lhs = node.child(0) orelse return Error.MissingRequiredChild;
+    {
+        var cursor = lhs.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+    }
+
+    try self.write(" = ", .{});
+
+    const rhs = node.child(2) orelse return Error.MissingRequiredChild;
+    {
+        var cursor = rhs.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+    }
 }
 
 pub fn writeAugmentedAssignment(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement compound assignments (+=, -=, etc.)
-    try self.writeTrimmed(node);
+    log.debug("writeAugmentedAssignment: children={}, text='{s}'", .{ node.childCount(), node.text()[0..@min(40, node.text().len)] });
+
+    // augmented_assignment: LHS op= RHS
+    // child 0: LHS expression
+    // child 1: operator (+=, -=, *=, **=, etc.)
+    // child 2: RHS expression
+    const lhs = node.child(0) orelse return Error.MissingRequiredChild;
+    {
+        var cursor = lhs.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+    }
+
+    const op = node.child(1) orelse return Error.MissingRequiredChild;
+    try self.write(" ", .{});
+    try self.write(op.text(), .{});
+    try self.write(" ", .{});
+
+    const rhs = node.child(2) orelse return Error.MissingRequiredChild;
+    {
+        var cursor = rhs.cursor();
+        try formatter.depthFirstWalk(&cursor, self);
+    }
 }
 
 pub fn writeExpressionStatement(self: *GdWriter, node: Node) Error!void {
-    // TODO: Implement expression statements
-    try self.writeTrimmed(node);
+    log.debug("writeExpressionStatement: children={}, text='{s}'", .{ node.childCount(), node.text()[0..@min(40, node.text().len)] });
+
+    // expression_statement wraps a single child expression
+    const child = node.child(0) orelse return Error.MissingRequiredChild;
+    var cursor = child.cursor();
+    try formatter.depthFirstWalk(&cursor, self);
 }
 
 pub fn writeMatchStatement(self: *GdWriter, node: Node) Error!void {
@@ -983,6 +1027,16 @@ pub fn writeSetget(self: *GdWriter, node: Node) Error!void {
 
 pub fn writeGetNode(self: *GdWriter, node: Node) Error!void {
     // TODO: Implement get_node expressions ($Node)
+    try self.writeTrimmed(node);
+}
+
+pub fn writeUnaryOperator(self: *GdWriter, node: Node) Error!void {
+    // TODO: Implement unary operators (not, ~, -, +)
+    try self.writeTrimmed(node);
+}
+
+pub fn writeAwaitExpression(self: *GdWriter, node: Node) Error!void {
+    // TODO: Implement await expressions
     try self.writeTrimmed(node);
 }
 
