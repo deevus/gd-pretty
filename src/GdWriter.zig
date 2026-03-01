@@ -1297,21 +1297,12 @@ pub fn writeMatchStatement(self: *GdWriter, node: Node) Error!void {
     log.debug("writeMatchStatement: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
     assert(node.getTypeAsEnum(NodeType) == .match_statement);
 
-    if (comptime std.log.default_level == .debug) {
-        for (0..node.childCount()) |idx| {
-            if (node.child(@intCast(idx))) |child| {
-                const trimmed_text = std.mem.trim(u8, child.text(), " \t\n\r");
-                log.debug("  child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(20, trimmed_text.len)] });
-            }
-        }
-    }
-
     var i: u32 = 0;
 
     // match keyword
     {
         const match_node = node.child(i) orelse return Error.MissingRequiredChild;
-        assert(std.mem.eql(u8, match_node.getTypeAsString(), "match"));
+        assert(match_node.getTypeAsEnum(NodeType) == .match);
         try self.write("match ", .{});
         i += 1;
     }
@@ -1359,15 +1350,25 @@ pub fn writeMatchBody(self: *GdWriter, node: Node) Error!void {
 
     // match_body contains pattern_section children (and possibly ERROR nodes
     // from tree-sitter grammar limitations, e.g. ternary in patterns).
+    // Write newlines *between* sections (not after the last) to avoid
+    // trailing newlines that create blank lines with the parent's spacing.
     var after_error = false;
+    var first_section = true;
     for (0..node.childCount()) |idx| {
         const child = node.child(@intCast(idx)) orelse continue;
 
         const child_type = child.getTypeAsEnum(NodeType) orelse {
             // ERROR/unknown nodes: write inline without newline so they
             // merge with the next pattern_section (preserves source text).
+            // Consecutive ERROR nodes are also handled — each is written
+            // inline and the after_error flag persists until a pattern_section.
             log.debug("writeMatchBody: unknown child type {s}, writing inline", .{child.getTypeAsString()});
-            try self.writeIndentLevel(self.context.indent_level);
+            if (!after_error) {
+                if (!first_section) {
+                    try self.writeNewline();
+                }
+                try self.writeIndentLevel(self.context.indent_level);
+            }
             try self.writeTrimmed(child);
             after_error = true;
             continue;
@@ -1380,19 +1381,25 @@ pub fn writeMatchBody(self: *GdWriter, node: Node) Error!void {
                     try self.write(" ", .{});
                     after_error = false;
                 } else {
+                    if (!first_section) {
+                        try self.writeNewline();
+                    }
                     try self.writeIndentLevel(self.context.indent_level);
                 }
                 try self.writePatternSection(child);
-                try self.writeNewline();
+                first_section = false;
             },
             .comment => {
                 try self.handleComment(child);
             },
             else => {
                 log.debug("writeMatchBody: unexpected child type {s}, falling back to trimmed write", .{child.getTypeAsString()});
+                if (!first_section) {
+                    try self.writeNewline();
+                }
                 try self.writeIndentLevel(self.context.indent_level);
                 try self.writeTrimmed(child);
-                try self.writeNewline();
+                first_section = false;
             },
         }
     }
@@ -1401,15 +1408,6 @@ pub fn writeMatchBody(self: *GdWriter, node: Node) Error!void {
 pub fn writePatternSection(self: *GdWriter, node: Node) Error!void {
     log.debug("writePatternSection: children={}, indent={}", .{ node.childCount(), self.context.indent_level });
     assert(node.getTypeAsEnum(NodeType) == .pattern_section);
-
-    if (comptime std.log.default_level == .debug) {
-        for (0..node.childCount()) |idx| {
-            if (node.child(@intCast(idx))) |child| {
-                const trimmed_text = std.mem.trim(u8, child.text(), " \t\n\r");
-                log.debug("  patternSection child[{}]: type={s}, text='{s}'", .{ idx, child.getTypeAsString(), trimmed_text[0..@min(20, trimmed_text.len)] });
-            }
-        }
-    }
 
     var i: u32 = 0;
 

@@ -43,4 +43,3 @@ class X:
 				pass
 			[1,2,]:
 				pass
-
