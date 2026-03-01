@@ -1391,6 +1391,7 @@ pub fn writeMatchBody(self: *GdWriter, node: Node) Error!void {
             },
             .comment => {
                 try self.handleComment(child);
+                first_section = false;
             },
             else => {
                 log.debug("writeMatchBody: unexpected child type {s}, falling back to trimmed write", .{child.getTypeAsString()});
@@ -1443,8 +1444,12 @@ pub fn writePatternSection(self: *GdWriter, node: Node) Error!void {
                 while (i < node.childCount()) {
                     const body_child = node.child(i) orelse break;
                     const body_child_type = body_child.getTypeAsEnum(NodeType) orelse {
-                        log.err("Expected body or comment in pattern_section, got {s}", .{body_child.getTypeAsString()});
-                        return Error.UnexpectedNodeType;
+                        // ERROR node in body position — fall back to writeTrimmed
+                        log.debug("pattern_section body: unknown type {s}, falling back to writeTrimmed", .{body_child.getTypeAsString()});
+                        try self.writeIndentLevel(self.context.indent_level + 1);
+                        try self.writeTrimmed(body_child);
+                        i += 1;
+                        continue;
                     };
 
                     switch (body_child_type) {
@@ -1462,8 +1467,11 @@ pub fn writePatternSection(self: *GdWriter, node: Node) Error!void {
                             break;
                         },
                         else => {
-                            log.err("Expected body or comment in pattern_section, got {s}", .{body_child.getTypeAsString()});
-                            return Error.UnexpectedNodeType;
+                            log.debug("pattern_section body: unexpected type {s}, falling back to writeTrimmed", .{body_child.getTypeAsString()});
+                            try self.writeIndentLevel(self.context.indent_level + 1);
+                            try self.writeTrimmed(body_child);
+                            i += 1;
+                            continue;
                         },
                     }
                 }
