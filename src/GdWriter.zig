@@ -779,10 +779,9 @@ pub fn writeClassNameStatement(self: *GdWriter, node: Node) Error!void {
 }
 
 // ============================================================================
-// STUB METHODS - Need implementation for full GDScript support
+// PARTIALLY IMPLEMENTED - Root node with formatting rules
 // ============================================================================
 
-// Critical Language Features
 pub fn writeSource(self: *GdWriter, node: Node) Error!void {
     log.debug("writeSource: children={}, indent={}, bytes_written={}", .{ node.childCount(), self.context.indent_level, self.bytes_written });
 
@@ -799,10 +798,21 @@ pub fn writeSource(self: *GdWriter, node: Node) Error!void {
         // Only emit separator if the previous child actually wrote output
         if (prev_child) |prev| {
             if (prev_wrote_output) {
-                if (hasBlankLinesBetween(prev, child)) {
+                const has_blank_lines = hasBlankLinesBetween(prev, child);
+                const is_class_name_extends = prev.getTypeAsEnum(NodeType) == .class_name_statement and
+                    child.getTypeAsEnum(NodeType) == .extends_statement and
+                    !has_blank_lines;
+
+                if (is_class_name_extends) {
+                    // class_name Foo extends Node — keep on same line
+                    try self.write(" ", .{});
+                } else {
+                    // Always one newline between statements; extra newline to preserve blank lines
+                    if (has_blank_lines) {
+                        try self.writeNewline();
+                    }
                     try self.writeNewline();
                 }
-                try self.writeNewline();
             }
         }
 
